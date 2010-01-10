@@ -1,0 +1,16 @@
+5454FCFF blue
+54FC54FF green
+54FCFCFF cyan
+FC5454FF red
+FC54FCFF purple
+FCFC54FF yellow
+FCFCFCFF white
+000000FF black
+0000A8FF dark blue
+00A800FF dark green
+00A8A8FF dark cyan
+A80000FF dark red
+A800A8FF dark purple
+A8A800FF dark yellow
+A8A8A8FF gray
+545454FF dark gray
