@@ -139,6 +139,7 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         return Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed, targetA, targetB, flags)
     elif CollisionDict[board.room[targetA][targetB].name] == "Touch": #Object (scroll?)
         OOP_Send(board.room[targetA][targetB], ":touch")
+        #Tyger.Dprint("successful :touch")
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     elif CollisionDict[board.room[targetA][targetB].name] == "Push": #Pushing
         if board.room[targetA][targetB].name == "bomb" and board.room[targetA][targetB].param1 == 0: #If it's a bomb, activate it.
@@ -456,7 +457,7 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
     xstep = abs(xstep)
     ystep = abs(ystep)
     results = [board.room[x][y]] #Place the element that's pushing in the array
-    print "Push func: Input = " + str(xstep) + " | " + str(ystep)
+    #print "Push func: Input = " + str(xstep) + " | " + str(ystep)
     
     if input == "n":
         input = "up"
@@ -489,14 +490,14 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
             offA = offA + ystep
             offB = offB + xstep
         
-        print str(x+offA) + " " + str(y+offB)
+        #print str(x+offA) + " " + str(y+offB)
         if (x+offA) > 24 or (y+offB) > 59 or (x+offA) < 0 or (y+offB) < 0: #Check for the board edge
             if crush == False:
                 break
             if crush == True:
                 results.append(Tyger.Spawn("normal", 42, Tyger.white, Tyger.bgdarkblue, (666, 777), 0, 0, 0, 0, 0, 0)) #Pretend there's a normal wall instead of an infinite void. Clever girl.
         else:
-            print "Moving along" + board.room[x+offA][y+offB].name + " | " + PushDict[results[-1].name]
+            #print "Moving along" + board.room[x+offA][y+offB].name + " | " + PushDict[results[-1].name]
             results.append(board.room[x+offA][y+offB]) #Add the next element to the array
         if (results[-1].name == "sliderns" and (input == "left" or input == "right")) or (results[-1].name == "sliderew" and (input == "up" or input == "down")):
             break
@@ -522,7 +523,7 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
             else:
                 break #Fuck it we're not doing shit
         elif PushDict[results[-1].name] == "push":
-            print "Push it to the limit " + results[-1].name
+            #print "Push it to the limit " + results[-1].name
             continue
         if PushDict[results[-1].name] == "go":
             #Pop the last element as it's a fake or empty and MEANINGLESS.
@@ -871,7 +872,7 @@ def CleanBomb(board, x, y):
             
     #Lastly, destroy the bomb itself.
     DestroyStat(board, x, y)
-    print str(board.roomunder[x][y])
+    #print str(board.roomunder[x][y])
     board.room[x][y] = board.roomunder[x][y]
 def Blink(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
     #Easier directional refences
@@ -1058,21 +1059,22 @@ def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, ti
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, "null", board
     
 def OOP_Clear(flag, flags):
-    print "Before... " + str(flags)
+    #print "Before... " + str(flags)
     for x in range(0, len(flags)-1):
         if flag == flags[x]:
             flags.pop(x)
-    print str(flags)
+    #print str(flags)
     
 def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
     object = board.room[x][y]
     progress = 0
-    idling = False
     Moved = True
+    NoAdvance = False
+    #IfCmd = False
     #Retry = False
     #print str(object.line)
     
-    while progress < 33 and idling == False: #Only 33 non-cycle ending commands can be executed at once.
+    while progress < 33: #Only 33 non-cycle ending commands can be executed at once.
         progress = progress + 1
         
         #print object.oop
@@ -1093,20 +1095,30 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             current = object.oop[object.line:].split("\n")[0]
         if (object.line >= object.oopLength) or (object.line < 0):
             object.line = -1
-            print "Breaking"
+            #print "Breaking"
             break
             
         if current[0] == "#" or current[0] == "/" or current[0] == "?" or current[0] == ":":
             current = current.lower()
-        #print current + "           -Current command"
+        #print current + " " + str(object.line) + "           -Current command/line"
         
-        if current.split(" ")[0] == "#char": #Continues
+        #Interpret any possible command:
+        
+        if current.split(" ")[0] == "#become": #Ends!
+            #print "I don't know shit, we gonna keep movin"
+            board.room[x][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0) #TEMPORARILY MAKE #BECOME JUST #DIE
+            DestroyStat(board, x, y)
+        elif current.split(" ")[0] == "#bind": #
+            print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
+        elif current.split(" ")[0] == "#change": #Continues
+            print "THAT'S NOT #CHANGE WE CAN BELIEVE IN\r"
+        elif current.split(" ")[0] == "#char": #Continues
             object.param1 = int(current.split(" ")[1])
         elif current.split(" ")[0] == "#clear": #Continues
             OOP_Clear(current.split(" ")[1].upper(), flags)
         elif current.split(" ")[0] == "#cycle": #Continues
             object.cycle = int(current.split(" ")[1])
-        elif current.split(" ")[0] == "#die": #Ends
+        elif current.split(" ")[0] == "#die": #Ends!
             board.room[x][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0)
             DestroyStat(board, x, y)
             break
@@ -1133,8 +1145,28 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                     ecycles = 75 * (current.split(" ")[1] == "energizer")
             elif current.split(" ")[1] == "key":
                 keys[KeyDict[current.split(" ")[2]]] = 1
-        elif current.split(" ")[0] == "#go" or current.split(" ")[0] == "#try": #Ends
-            dir = ParseDir(current.split(" ")[1:], x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.
+        elif current.split(" ")[0] == "#go" or current.split(" ")[0] == "#try" or current.split(" ")[0][0] == "/" or current.split(" ")[0][0] == "?": #Ends
+            #NoAdvance = False
+            if current.split(" ")[0][0] == "/": #You're using / or ?
+                command = current.split("/")[1:]
+                #print str(command) + " is the / command"
+            elif current.split(" ")[0][0] == "?":
+                command = current.split("?")[1:]
+                #print str(command) + " is the ? command"
+            else: #You're using #go or #try
+                #print "#Go/Try"
+                command = current.split(" ")[1:]
+            #print str(len(command)) + " length of commands"
+            
+            if len(command) == 1:
+                try:
+                    IsDirDict[command[-1]]#Check to see there's no afterthought command on the same line (as in /e/e#shoot e)
+                except KeyError:
+                    #print "Afterthought command"
+                    command[-1] = command[-1].split("#")[0]
+                    NoAdvance = True
+                
+            dir = ParseDir(command, x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.
             #print "I want to #go... " + dir
             #if board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "empty":
             if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
@@ -1148,6 +1180,9 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 UpdateStat(board, x, y, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"))
                 Moved = True
                 progress = 100 #Ok you're done parsing oop this cycle
+                #print "OK I MOVED!"
+                if current[0] == "#": #If you're #go-ing
+                    NoAdvance = False
                 #break
             elif ObjectDict[board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name] == "Push":
                 #print "No pushing yet"
@@ -1160,26 +1195,175 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 #Retry = False
                 #break
             else: #If you can't walk here
-                print "Try something will ya"
+                #print "Try something will ya"
                 if current.split(" ")[0] == "#try":
                     try:
                         print str(IsDirDict[current.split(" ")[-1]])
-                        print "It is a direction"
+                        #print "It is a direction"
                         Moved = True
                     except KeyError:
-                        print "It is not a direction..." + (":" + current.split(" ")[-1])
+                        #print "It is not a direction..." + (":" + current.split(" ")[-1])
                         #You want to jump to this label.
                         OOP_Send(object, ":" + current.split(" ")[-1])
                         progress = 100
                         Moved = False
                 else:
                     Moved = False
+                    
+            #/ and ? cleanup!
+            if current[0] == "/" or current[0] == "?" and Moved == True: #Do some funny rewininding through the code so the automatic movement ahead makes you sync
+                NoAdvance = True #We're going to advance the code manually
+                #print "Current is..." + str(current) + " ... " + str(command)
+                
+                current = current[1:] #Get rid of the identifier for the command we already executed ie /n/s/e/w = n/s/e/w
+                object.line = object.line + 1
+                #print current + " is current!"
+                #print current[0]
+                while (current[0] != "/") and (current[0] != "?") and (current[0] != "#"):
+                    object.line = object.line + 1
+                    current = current[1:]
+                    #print current + " is current"
+                    if current == "":
+                        #print "No more code!" + str(object.oop[18]) + str(object.oop[19]) + str(object.oop[20]) + str(object.oop[21]) + str(object.oop[22])
+                        object.line = object.line + 1
+                        break
+                    #print (current[0] != "/") or (current[0] != "?") or (current[0] != "#")
+                #object.line = object.line + len(current[1].split("/")
+                #print str(object.line)
+                """if NoAdvance == False:
+                    object.line = object.line - len(current) - 1 + len(command[0]) + (len(command) != 1)
+                    #object.line = object.line - len(current) - 1 + len(command[0]) + (len(command) != 1) #k
+                    print str(object.line) + " not touched"
+                    object.line = object.line - len(current) + len(command[0]) #end
+                    print str(object.line) + " touched"
+                    NoAdvance = True
+                    print str(object.oop[object.line:])
+                    #object.line = object.line - 1
+                    
+                if NoAdvance == True:
+                    print "Here's what I think current is " + current + " " + str(object.line)
+                    #print "Here's what current could be "  + str(object.oop[object.line:].split("\n")[0])
+                    object.line = object.line + len(command[0].split("#")[0]) + 1
+                    print "Future current: " + str(object.oop[object.line:].split("\n")[0])
+                """    
             #break
+        elif current.split(" ")[0] == "#if": #Continues
+            result = False #I'm just going to assume you're a failure here.
+            opposite = False #Today is NOT opposite day.
+            Tyger.Dprint(str(Moved))
+            #Break the if statement down
+            statement = current.split(" ")[1:]
+            #print str(statement)
+            if statement[0] == "not": #If you want the not...
+                opposite = True #Take the not.
+                statement.pop(0) #And let's strip it to make things easier on ourselves
+            
+            #Check if your condition is builtin or a flag
+            if statement[0] == "alligned" or statement[0] == "aligned":
+                #condition = "alligned"
+                if (x == board.statcoords[0][0]) or (y == board.statcoords[0][1]): #Are you aligned?
+                    result = True
+                    statement.pop(0) #Get rid of the condition
+                    #next = Tyger.string.join(statement, " ") #Assemble the true command
+                    #print "Results are... ", next
+            elif statement[0] == "any":
+                for col in xrange(0,25):
+                    for row in xrange(0,60):
+                        if board.room[col][row].name == statement[1]:
+                            #print "Found " + statement[1]
+                            result = True
+                            break
+                    if result == True:
+                        break
+                statement.pop(0) #Remove the any
+                statement.pop(0) #Remove the item you searched
+            
+            elif statement[0] == "blocked":
+                #condition = "blocked"
+                statement.pop(0)
+                #x = 1
+                #Get the full direction
+                rawdir = []
+                while True:
+                    #print "Top"
+                    if statement[0] == "cw" or statement[0] == "ccw" or statement[0] == "rndpe" or statement[0] == "opp":
+                        rawdir.append(statement[0])
+                    else:
+                        rawdir.append(statement[0])
+                        break
+                    #x = x + 1
+                    statement.pop(0)
+                    #print "Welp" + str(statement)
+                    
+                statement.pop(0)
+                #print str(rawdir) + "is the raw dir" + "\n this is the command" + str(statement)
+                dir = ParseDir(rawdir, x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Find the direction to look at
+                #print dir + "is dir"
+                #print "Final statement: " + str(statement)
+                
+                if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
+                    result = False #Not blocked.
+                else: #Actually check
+                    if ObjectDict[board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name] == "solid" or ObjectDict[board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name] == "Push":
+                        result = True #You're blocked!
+            elif statement[0] == "contact":
+                statement.pop(0) #Remove the contact
+                if y-1 >= 0 and result == False: #Look left
+                    if board.statcoords[0][1] == (y-1):
+                        #print "Left contact!"
+                        result = True
+                if y+1 <= 59 and result == False: #Look right
+                    if board.statcoords[0][1]  == (y+1):
+                        result = True
+                        #print "Right contact!"
+                if x-1 >= 0 and result == False: #Look up
+                    if board.statcoords[0][0] == (x-1):
+                        #print "Up contact!"
+                        result = True
+                if x+1 <= 24 and result == False: #Look down
+                    if board.statcoords[0][0] == (x+1):
+                        #print "Down contact!"
+                        result = True
+                #if x-1 < 0 or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
+                
+            elif statement[0] == "energized":
+                statement.pop(0)
+                if ecycles != 0:
+                    result = True
+            else: #Flag
+                for flag in flags:
+                    if flag == statement[0].upper():
+                        result = True
+                        statement.pop(0) #Remove the flag name
+                        #print "Flaggot"
+                        break
+            
+            #Flip a NOT prefix
+            if opposite == True:
+                result = not result
+            if result == True:
+                next = Tyger.string.join(statement, " ") #Assemble the true command
+                #Advance the code to the after command
+                NoAdvance = True
+                Moved = True #Maybe?
+                
+                object.line = object.line + len(current) - len(next)
+                #print object.oop[object.line:].replace("\n", "\t") + " I advanced the code"
+                if next[0] != "#" and next[0] != "/" and next[0] != "?":
+                    next = ":" + next
+                    OOP_Send(object, next)
+                    #print "Adjusted!"
+                #IfCmd = True
+                
+                
         elif current.split(" ")[0] == "#idle": #Ends
-            idling = True
-            print "Idling..."
+            progress = 100
         elif current.split(" ")[0] == "#lock": #Continues
             object.param2 = 1
+        elif current.split(" ")[0] == "#play": #Continues
+            print "I got my problems, and my problems they got me...\r"
+        elif current.split(" ")[0] == "#put": #-
+            print "POOT SENTRY HERE\r"
         elif current.split(" ")[0] == "#restart": #Continues
             object.line = 0
             continue
@@ -1189,10 +1373,10 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 #print object.oop
         elif current.split(" ")[0] == "#set": #continues
             flags.append(current.split(" ")[1])
-        elif current.split(" ")[0] == "#shoot": #Ends
+        elif current.split(" ")[0] == "#shoot" or current.split(" ")[0] == "#throwstar": #Ends
             progress = 100
             dir = ParseDir(current.split(" ")[1:], x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.
-            print "I want to #shoot... " + dir
+            #print "I want to #shoot... " + dir
             #if board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "empty":
             if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
                 break
@@ -1200,13 +1384,19 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             #Can you shoot there?
             if board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "empty":
                 board.roomunder[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] #Put the fake/water on the under layer
-                #Spawn the bullet
-                board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("bullet", 248, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
+                #Spawn the bullet/star
+                if current.split(" ")[0] == "#throwstar":
+                    board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("star", 47, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
+                else:
+                    board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("bullet", 248, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
                 board.statcoords.append((x-(dir=="n")+(dir=="s"), y-(dir=="w")+(dir=="e"))) #Make the stat
-            elif board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "water":
+            elif (board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "water"):
                 board.roomunder[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] #Put the fake/water on the under layer
                 #Spawn the bullet
-                board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("bullet", 248, Tyger.white, board.room[x-(dir == "n")+(dir == "s")][y-(dir == "w")+(dir == "e")].background, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
+                if current.split(" ")[0] == "#shoot":
+                    board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("bullet", 248, Tyger.white, board.room[x-(dir == "n")+(dir == "s")][y-(dir == "w")+(dir == "e")].background, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
+                else:
+                    board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("star", 47, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
                 board.statcoords.append((x-(dir=="n")+(dir=="s"), y-(dir=="w")+(dir=="e"))) #Make the stat
             elif board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "player": #You got shot at point blank.
                 health = health - 10
@@ -1238,16 +1428,53 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             object.ystep = WalkDict[dir][1]
         elif current.split(" ")[0] == "#zap": #Continues
             object.oop = object.oop.replace(":" + current.split(" ")[1], "'" + current.split(" ")[1], 1)
+        elif current.split(" ")[0] == "#send" or current.split(" ")[0][0] == "#":
+            #print "SEND COMMAND", current
+            """if IfCmd == True: #If this is an if command we just jump right to the label.
+                print "Jumping to", current
+                IfCmd = False
+                command = ":" + current
+                OOP_Send(object, command)"""
+                
+                
+            if current.split(" ")[0] == "#send":
+                #print current.split(" ")[1]
+                command = current.split(" ")[1] #Reduce the command to an object and a label at most
+            else:
+                command = current[1:]
+            #print str(command) + " is the #send without a #send"
+            if command.find(":") == -1: #If it's just a label then it's for this object
+                command = ":" + command
+                #print "Ok jumping to " + command
+                OOP_Send(object, command)
+                NoAdvance = True
+            else: #Otherwise we need to find the object and the label.
+                name = command[:command.find(":")]
+                label = command[command.find(":"):]
+                #Find every object with that name
+                #print "Have some objects " + name + ":" + label
+                for position in board.statcoords: #Look at every stat on the screen
+                    if position != "pop": #Check the stat isn't in limbo
+                        if board.room[position[0]][position[1]].name == "object": #Check that you're looking at an object
+                            if board.room[position[0]][position[1]].oop != None: #Check that the object has oop
+                                code = board.room[position[0]][position[1]].oop.lower() #Read its name if it has one
+                                code = code.split("\n")[0]
+                                #print code
+                                if code[1:] == name: #if the object and #send name match
+                                    OOP_Send(board.room[position[0]][position[1]], label, True)
         else: #Message
             try:
                 if current.split(" ")[0][0] != "#" and current.split(" ")[0][0] != "/" and current.split(" ")[0][0] != "?" and current.split(" ")[0][0] != "@" and current.split(" ")[0][0] != ":" and current.split(" ")[0][0] != "'":
-                    print current
+                    print "--------------------" + current + "--------------------"
             except IndexError:
-                print current
+                print "--------------------" + current + "--------------------"
             progress = progress - 1
         
         #Move to the next line if you're still going
-        if object.line != -1 and Moved == True:
+        
+        #print str(object.line) + " " + str(Moved) + " " + str(NoAdvance)
+        if object.line != -1 and Moved == True and NoAdvance == False:
+            #print "Advancing code"
             object.line = object.line + len(current) + 1
         #print "Line is... " + str(object.line + 1)
         #print str(object.oop[object.line + 1])
@@ -1255,6 +1482,8 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             object.line = -1
             break
         
+        NoAdvance = False
+        Moved = True #Maybe? Play Fridgeraid to find out for sure.
     #Post oop handling
     #if object.oopLength != 0:
         #print "Done OOPing about " + str(object.line) + " | " + str(object.oopLength)
@@ -1276,16 +1505,23 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     
-def OOP_Send(object, label):
-    x = object.oop.lower().find(label) #Find the label
-    if x != -1:
-        object.line = x
-        print "Jump to " + str(x)
+def OOP_Send(object, label, extsend=False):
+    if object.param2 == 1: #Check for a lock
+        return
+    if object.oop.lower().find(label) == -1 and extsend == True:
+        return
+    object.line = object.oop.lower().find(label) #Find the label
+    #print "Jump to " + str(object.line)
+    #x = raw_input("Press a key sir")
+
 
 def ParseDir(input, x, y, Px, Py, xstep, ystep):
-    print "Input is... " + str(input) + " " + str(len(input))
+    #print "Input is... " + str(input) + " " + str(len(input))
     choices = []
-    #if len(input) == 1:
+    Tyger.Dprint(str(input))
+    #blah = raw_input("Hit enter")
+    if len(input) == 1:
+        input = input[0].split(" ") #Fix for /opp seek
     if (input[0] == "n") or (input[0] == "s") or (input[0] == "e") or (input[0] == "w") or (input[0] == "i"):
         return input[0]
     elif input[0] == "flow":
@@ -1361,5 +1597,7 @@ def ParseDir(input, x, y, Px, Py, xstep, ystep):
         elif key == "rndne" or key == "rnd":
             return Tyger.random.sample(["n", "s", "e", "w"], 1)[0] #I hate you.
         return Tyger.random.sample(RndpDict[key], 1)[0]
+    print "You sent an invalid direction, I'll just idle." + str(input[0]) + "|" + str(input[1])
     return "i"
     
+

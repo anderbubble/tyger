@@ -174,7 +174,6 @@ world = None
 
 
 def main():
-    scrnum = 0  #Screenshot number
     RESOLUTION = res
     FSCREEN = False
     
@@ -207,13 +206,10 @@ def main():
     cycles = 0
     input = "null" 
 
-    
-    #Screenshot related
+    #Screenshots and Screenrecords
     games = glob.glob("screenshots\\" + world.gamename + "*.png")
     scrnum = len(games)  #Screenshot number
-    
-    #for my own recording purposes
-    capture = 0
+    capture = glob.glob("record\\" + world.gamename + "*.png")
     record = False
     
     #MAIN GAME LOOP
@@ -357,9 +353,10 @@ def main():
             #print str(screen) + "Post zoom"
         pygame.display.update()
         #screenshot = "screenshots/" + world.gamename + "-" + str(scrnum) + ".png"
-        if input != "null" and record == True:
+        #if input != "null" and record == True:
+        if record == True:
             capture = capture + 1
-            pygame.image.save(screen, "record/" + str(capture)+".png")
+            pygame.image.save(screen, "record/" + world.gamename + " - " + str(capture)+".png")
         pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
         #pygame.display.set_caption("Time: " + str(time) + " Seconds: " + str(seconds) + "Cycles?: " +str(cycles) + "/" + str(intcycles))
         #print "Time: " + str(time) + " Seconds: " + str(seconds) + "Cycles?: " +str(cycles)
@@ -1164,7 +1161,8 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     #Open the ZZT file
     temp = ""
     #game = os.open(zztfile, os.O_RDONLY)
-    game = os.open(zztfile, os.O_RDONLY | os.O_BINARY)
+    #game = os.open(zztfile, os.O_RDONLY | os.O_BINARY)
+    game = open_binary(zztfile)
     
     #Check if this is a valid ZZT file
     temp = read2(game)
@@ -1198,8 +1196,8 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     
     #Print World Information
     Dprint("*"*50)
-    Dprint(str(world))
-    Dprint("*"*50)
+    #Dprint(str(world))
+    #Dprint("*"*50)
     
     #Board setup
     allboards           = []
@@ -1266,5 +1264,11 @@ def Spawn(name, character, foreground, background, coords, xstep, ystep, cycle, 
     temp.oop = oop
     temp.image = makeimage(temp.character, temp.foreground, temp.background)
     return temp
+
+def open_binary(path):
+    flags = os.O_RDONLY
+    if hasattr(os, 'O_BINARY'):
+        flags = flags | os.O_BINARY
+    return os.open(path, flags)
 
 if __name__ == '__main__': main()

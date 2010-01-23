@@ -74,5 +74,5 @@ FlowDict = {(0,-1):"n", (0,1):"s", (1,0):"e", (-1,0):"w", (0,0):"i"}
 CwDict = {"n":"e", "s":"w", "e":"s", "w":"n", "i":"i"}
 CcwDict = {"n":"w", "s":"e", "e":"n", "w":"s", "i":"i"}
 OppDict = {"n":"s", "s":"n", "e":"w", "w":"e", "i":"i"}
-RndpDict = {"n":["e", "w"], "s":["e", "w"], "e":["n", "s"], "w":["n", "s"], "i":["i"]}
-IsDirDict = {"n":True, "s":True, "e":True, "w":True, "i":True}
+RndpDict = {"n":["e", "w"], "s":["e", "w"], "e":["n", "s"], "w":["n", "s"], "i":["i"], "rndns":["e", "w"], "rndne":["n", "s", "e", "w"]}
+IsDirDict = {"n":True, "s":True, "e":True, "w":True, "i":True, "seek":True, "flow":True}
