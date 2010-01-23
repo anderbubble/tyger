@@ -18,7 +18,8 @@ def titlescreen(screen, RESOLUTION):
     """
     
     #titlescreen = pygame.image.load("gfx/Titleboard.png").convert() #Load the title screen
-    title = os.open("Tyger.brd", os.O_RDONLY | os.O_BINARY)
+    #title = os.open("Tyger.brd", os.O_RDONLY | os.O_BINARY) OLD
+    title = open_binary("Tyger.brd")
     board = Board(title, 0)
     board.room[board.statcoords[0][0]][board.statcoords[0][1]] = Element("monitor", 32, gray, bgblack, board.statcoords[0])
     screen = pygame.display.set_mode(RESOLUTION) #NOFRAME alt param
@@ -182,3 +183,4 @@ def drawsaves(center, screen, savelist, savelistdesel):
             
     #THIS TOOK LIKE TWO HOURS MY GOD.
     pygame.display.update()
+    
