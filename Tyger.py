@@ -472,7 +472,7 @@ def makeimage(character, foreground, background):
     except TypeError:
         print str(background)
         background = (100,100,100,100)
-        print "ERROR"
+        print "ERROR in function makeimage"
         image.fill(background)
     #Apply foreground
     image.blit(foreground, (0,0), Coords)
@@ -632,7 +632,8 @@ class Board(object):
             y = read(file) #Get the element's coordinates
             #print "Element's X/Y: " + str(x) + "/" + str(y)
             if x > 60 or y > 25:
-                Dprint("ERROR...")
+                Dprint("ERROR. Stat not on board.")
+                print x, y, self.title
                 continue
                             #self.room[x][y] is an element
             self.statcoords.append((y-1,x-1)) #Add a tuple with the element's coords for future reference
@@ -660,6 +661,10 @@ class Board(object):
             
             self.room[y-1][x-1].line = read2(file) #Current line # of code to be executing.
             self.room[y-1][x-1].oopLength = read2(file) #Length of ZZT-OOP
+            #print self.room[y-1][x-1].oopLength, "IS THE OOP LENGTH"
+            if self.room[y-1][x-1].oopLength > 32767:
+                print "Object is bound to something"
+                self.room[y-1][x-1].oopLength = 0
             
             sread(file, 8) #8 bytes of padding. God Tim a 5.25" flopppy can only hold so much! Stop wasting space!
             #print "X/Y at the end here are: " + str(x) + "/" + str(y)
@@ -1247,7 +1252,7 @@ def imageUnload(board):
 
 def Spawn(name, character, foreground, background, coords, xstep, ystep, cycle, param1, param2, param3, follownum = "", leadnum = "", uID = 0, uColor = 0, line = 0, ooplength = 0, oop = None):
     temp = Element(name, character, foreground, background, coords)
-    
+    #print "Spawning... " + name
     #Stats
     temp.xstep = xstep
     temp.ystep = ystep
