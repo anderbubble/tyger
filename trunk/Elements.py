@@ -3,7 +3,7 @@ from Dictionaries import *
 import Tyger
 import pygame
 
-#Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
+#Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0)
 #To spawn an empty
 
 #position is the position in the array of stat objects
@@ -34,7 +34,7 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
     elif board.room[x][y].name == "monitor":
         return Monitor(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, world, allboards, screen)
     elif board.room[x][y].name == "object":
-        return Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
+        return Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen)
     elif board.room[x][y].name == "bullet":
         #print "Bullet time."
         return Bullet(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
@@ -45,6 +45,8 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
         return Bomb(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed) #What makes me a good demoman?
     elif board.room[x][y].name == "blinkwall":
         return Blink(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
+    elif board.room[x][y].name == "bear":
+        return Bear(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     
 def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, allboards, screen):
@@ -1065,7 +1067,7 @@ def OOP_Clear(flag, flags):
             flags.pop(x)
     #print str(flags)
     
-def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
+def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen):
     object = board.room[x][y]
     progress = 0
     Moved = True
@@ -1086,13 +1088,14 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         current = object.oop[object.line:].split("\n")[0]
         while current == "":
             #print "Yikes"
-            object.line = object.line + 2
+            object.line = object.line + 1 #Was +2
             if object.line >= object.oopLength:
                 
                 break
             #print "Line is... " + str(object.line + 1)
             #print str(object.oop[object.line + 1])
             current = object.oop[object.line:].split("\n")[0]
+            #print "Blank lines..."
         if (object.line >= object.oopLength) or (object.line < 0):
             object.line = -1
             #print "Breaking"
@@ -1100,10 +1103,14 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             
         if current[0] == "#" or current[0] == "/" or current[0] == "?" or current[0] == ":":
             current = current.lower()
+        if current[0] == " ":
+            current = "_" + current[1:] #Replace space with an underscore for now!
         #print current + " " + str(object.line) + "           -Current command/line"
-        
+        if current == "\n" or current == "\r":
+            print "NEWLINE"
+            current = "A NEWLINE"
         #Interpret any possible command:
-        
+        #print "++++", current + "=-=-=-="
         if current.split(" ")[0] == "#become": #Ends!
             #print "I don't know shit, we gonna keep movin"
             board.room[x][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0) #TEMPORARILY MAKE #BECOME JUST #DIE
@@ -1146,6 +1153,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             elif current.split(" ")[1] == "key":
                 keys[KeyDict[current.split(" ")[2]]] = 1
         elif current.split(" ")[0] == "#go" or current.split(" ")[0] == "#try" or current.split(" ")[0][0] == "/" or current.split(" ")[0][0] == "?": #Ends
+            #print object.oop[0:15] + "IS THE OBJECT"
             #NoAdvance = False
             if current.split(" ")[0][0] == "/": #You're using / or ?
                 command = current.split("/")[1:]
@@ -1198,7 +1206,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 #print "Try something will ya"
                 if current.split(" ")[0] == "#try":
                     try:
-                        print str(IsDirDict[current.split(" ")[-1]])
+                        #print str(IsDirDict[current.split(" ")[-1]])
                         #print "It is a direction"
                         Moved = True
                     except KeyError:
@@ -1250,7 +1258,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#if": #Continues
             result = False #I'm just going to assume you're a failure here.
             opposite = False #Today is NOT opposite day.
-            Tyger.Dprint(str(Moved))
+            #Tyger.Dprint(str(Moved))
             #Break the if statement down
             statement = current.split(" ")[1:]
             #print str(statement)
@@ -1465,9 +1473,9 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         else: #Message
             try:
                 if current.split(" ")[0][0] != "#" and current.split(" ")[0][0] != "/" and current.split(" ")[0][0] != "?" and current.split(" ")[0][0] != "@" and current.split(" ")[0][0] != ":" and current.split(" ")[0][0] != "'":
-                    print "--------------------" + current + "--------------------"
+                    print "---------------" + current + "---------------"
             except IndexError:
-                print "--------------------" + current + "--------------------"
+                print "---------------" + current + "---------------"
             progress = progress - 1
         
         #Move to the next line if you're still going
@@ -1506,6 +1514,8 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     
 def OOP_Send(object, label, extsend=False):
+    if object.oop == None:
+        return
     if object.param2 == 1: #Check for a lock
         return
     if object.oop.lower().find(label) == -1 and extsend == True:
@@ -1518,7 +1528,7 @@ def OOP_Send(object, label, extsend=False):
 def ParseDir(input, x, y, Px, Py, xstep, ystep):
     #print "Input is... " + str(input) + " " + str(len(input))
     choices = []
-    Tyger.Dprint(str(input))
+    #Tyger.Dprint(str(input))
     #blah = raw_input("Hit enter")
     if len(input) == 1:
         input = input[0].split(" ") #Fix for /opp seek
@@ -1600,4 +1610,100 @@ def ParseDir(input, x, y, Px, Py, xstep, ystep):
     print "You sent an invalid direction, I'll just idle." + str(input[0]) + "|" + str(input[1])
     return "i"
     
-
+def Bear(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
+    #Bears hibernate unless a player is near them. Compare the X and Y coords of the player and the bear.
+    dir = None
+    deltaX = abs(x - board.statcoords[0][0])
+    deltaY = abs(y - board.statcoords[0][1])
+    print "Distance X/Y | Param1", deltaX, deltaY, board.room[x][y].param1
+    
+    #Are you aligned?
+    #I don't quite understand why this is needed.
+    if (x == board.statcoords[0][0]):
+        if y > board.statcoords[0][1]:
+            dir = "west"
+        else:
+            dir = "east"
+    elif(y == board.statcoords[0][1]):
+        if x > board.statcoords[0][0]:
+            dir = "north"
+        else:
+            dir = "south"
+    print "----------------------------------------", dir
+    if (deltaX <= board.room[x][y].param1) and (dir != "north") and (dir != "south"): #E/W movement
+        print "Tiggered X axis", (board.statcoords[0][0] - x)
+        #print str(board.statcoords[0][0] - x)
+        if ((board.statcoords[0][1] - y) < 0) or dir == "west" : #West
+            print "WEST!"
+            if BearDict[board.room[x][y-1].name] == "walkable": #Move
+                board.roomunder[x][y-1] = board.room[x][y-1] #Under setup
+                board.room[x][y-1] = board.room[x][y] #Move
+                board.statcoords[position] = (x, y-1) #New Stat
+                board.room[x][y] = board.roomunder[x][y] #Erase old bear
+            elif BearDict[board.room[x][y-1].name] == "hurt": #Move
+                health = health - 10
+                DestroyStat(board, x, y)
+                board.room[x][y] = board.roomunder[x][y]
+            elif BearDict[board.room[x][y-1].name] == "destroy": #Mr. Gorbachev, tear down this wall!
+                print "Destroy"
+                board.room[x][y] = board.roomunder[x][y]
+                board.room[x][y-1] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y-1), 0, 0, 0, 0, 0, 0)
+                DestroyStat(board, x, y)
+                DestroyStat(board, x, y-1)
+        elif ((board.statcoords[0][1] + y) > 0) or dir == "east": #East
+            if BearDict[board.room[x][y+1].name] == "walkable": #Move
+                board.roomunder[x][y+1] = board.room[x][y+1] #Under setup
+                board.room[x][y+1] = board.room[x][y] #Move
+                board.statcoords[position] = (x, y+1) #New Stat
+                board.room[x][y] = board.roomunder[x][y] #Erase old bear
+            elif BearDict[board.room[x][y+1].name] == "hurt": #Move
+                health = health - 10
+                DestroyStat(board, x, y)
+                board.room[x][y] = board.roomunder[x][y]
+            elif BearDict[board.room[x][y+1].name] == "destroy": #Mr. Gorbachev, tear down this wall!
+                board.room[x][y] = board.roomunder[x][y]
+                board.room[x][y+1] =Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y+1), 0, 0, 0, 0, 0, 0)
+                DestroyStat(board, x, y)
+                DestroyStat(board, x, y+1)
+        else:
+            print "Failure E/W"
+    elif (deltaY <= board.room[x][y].param1): #N/S movement
+        print "Triggered Y axis"
+        print str(board.statcoords[0][0] - x)
+        if ((board.statcoords[0][0] - x) < 0) or dir == "north": #North
+            print "NORTH!"
+            if BearDict[board.room[x-1][y].name] == "walkable": #Move
+                print "Move"
+                board.roomunder[x-1][y] = board.room[x-1][y] #Under setup
+                board.room[x-1][y] = board.room[x][y] #Move
+                board.statcoords[position] = (x-1, y) #New Stat
+                board.room[x][y] = board.roomunder[x][y] #Erase old bear
+            elif BearDict[board.room[x-1][y].name] == "hurt": #Move
+                health = health - 10
+                DestroyStat(board, x, y)
+                board.room[x][y] = board.roomunder[x][y]
+            elif BearDict[board.room[x-1][y].name] == "destroy": #Mr. Gorbachev, tear down this wall!
+                print "Destroy"
+                board.room[x][y] = board.roomunder[x][y]
+                board.room[x-1][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x-1, y), 0, 0, 0, 0, 0, 0)
+                DestroyStat(board, x, y)
+                DestroyStat(board, x-1, y)
+        elif ((board.statcoords[0][0] + x) > 0) or dir == "south": #South
+            print "South!"
+            if BearDict[board.room[x+1][y].name] == "walkable": #Move
+                board.roomunder[x+1][y] = board.room[x+1][y] #Under setup
+                board.room[x+1][y] = board.room[x][y] #Move
+                board.statcoords[position] = (x+1, y) #New Stat
+                board.room[x][y] = board.roomunder[x][y] #Erase old bear
+            elif BearDict[board.room[x+1][y].name] == "hurt": #Move
+                health = health - 10
+                DestroyStat(board, x, y)
+                board.room[x][y] = board.roomunder[x][y]
+            elif BearDict[board.room[x+1][y].name] == "destroy": #Mr. Gorbachev, tear down this wall!
+                board.room[x][y] = board.roomunder[x][y]
+                board.room[x+1][y] =Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x+1, y), 0, 0, 0, 0, 0, 0)
+                DestroyStat(board, x, y)
+                DestroyStat(board, x+1, y)
+        else:
+            print "Failure N/S"
+    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board #Ahm drunk, YOU don't have an excuse!
