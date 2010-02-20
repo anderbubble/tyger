@@ -1,6 +1,12 @@
 from Dictionaries import *
+import pygame
 import Tyger
 import Elements
+from pygame.locals import *
+from sys import exit
+
+global TextMessage
+TextMessage = None
 
 def Become(command, board, x, y):
     Elements.DestroyStat(board, x, y) #Destroy the old stat
@@ -26,6 +32,21 @@ def Clear(flag, flags):
     #print str(flags)
     return flags
     
+def CopyCode(board, name, object):
+    for position in board.statcoords: #Look at every stat on the screen
+        if position != "pop": #Check the stat isn't in limbo
+            if board.room[position[0]][position[1]].name == "object": #Check that you're looking at an object
+                if board.room[position[0]][position[1]].oop != None: #Check that the object has oop
+                    code = board.room[position[0]][position[1]].oop.lower() #Read its name if it has one
+                    code = code.split("\n")[0]
+                    #print code
+                    if code[1:] == name: #if the object and #send name match
+                        object.oop = board.room[position[0]][position[1]].oop #Change the oop
+                        object.line = 0 #Reset the object
+                        object.oopLength = board.room[position[0]][position[1]].oopLength #Change the oop
+                        return object
+    return object
+    
 def Cycle(cycle, current):
     try:
         cycle = int(cycle)
@@ -43,7 +64,8 @@ def Die(board, x, y):
     return element
     
 def Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current):
-    #print str(current)
+    print "HEADS UP"
+    print str(current)
     if current.split(" ")[1] != "key":
         try:
             ammo = ammo + (int(current.split(" ")[2]) * (current.split(" ")[1] == "ammo"))
@@ -89,6 +111,12 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
     dir = Elements.ParseDir(command, x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.
     #print "I want to #go... " + dir
     #if board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "empty":
+    
+    if dir == "i":
+        print "Idling"
+        progress = 100
+        return NoAdvance, Moved, progress
+    
     if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
         Moved = False
         return NoAdvance, Moved, progress
@@ -284,6 +312,70 @@ def If(current, object, x, y, board, ecycles, flags):
         print "Line is:", object.line
     return NoAdvance, Moved, object
 
+def Message(object, screen, board):
+    NoAdvance = True    #We're going to advance the object's code manually
+    breaking = False    #Breaking is whether or not we stopped reading a message due to a new command instead of end of code
+    message = ""        #The formatted message begins empty of course
+    lop = 0             #In the case of a multi-lined message this hits EOC we have to lop off an extra newline.
+    Multiline = True    #I assume you have a textbox by default, not a flashing bottom of the screen message
+    
+    raw = object.oop[object.line:].split("\n")  #Get the raw code to find the message in
+    
+    #Find the correct end of the message
+    for x in xrange(0,len(raw)):
+        if raw[x] == "":
+            message = message + "\n"
+        elif raw[x][0] == "#" or raw[x][0] == "/" or raw[x][0] == "?" or raw[x][0] == ":" or raw[x][0] == "'": #If you found the end of the message
+            breaking = True
+            break #You're done finding the true message
+        else:
+            message = message + raw[x] + "\n"
+    
+    #If the message is one line, do a text box
+    test = message.split("\n")
+    #print "TEST!", test
+    print len(test), test[1], breaking
+    if (len(test) == 3 and test[1] == "" and test[2] == "" and breaking == False) or (len(test) == 2 and test[1] == "" and breaking == True):
+        message = test[0]
+        Multiline = False
+    elif breaking == False:
+        #print "===============lopping"
+        message = message[:-1]
+        lop = 1
+    #print message + "-----------------"
+    
+    #At this point the message is properly split line by line!
+    
+    if Multiline:
+        TextBox(message, object.oop.split("\n")[0], screen)
+    else:
+        
+        MessageLine(message, screen, board)
+        #screen.blit(tempimg, (0,0))
+        #pygame.display.update()
+        #Tyger.message.append(tempimg)
+        
+        #print "MESSAGE MADE!", len(Tyger.message), str(Tyger.message)
+        #MessageLine(message, screen, board)
+    
+    object.line = object.line + len(message) + lop #Advance the object's code appropriately
+    return NoAdvance, object
+    
+def MessageLine(message, screen, board, priority="High"): #WIP!!!!
+    if (priority == "High") or (priority == "Low" and Tyger.options[3] == "False"):
+        board.msg = " " + message + " "
+        board.msglength = len(message)
+        tempimg = pygame.Surface((8*len(board.msg), 14)) #Create a surface for the message
+        tempimg.fill(Tyger.bgdarkblue)    
+        for x in range(0, len(board.msg)): #Then for every character of text in that list... (chopping off the .zzt)
+            tempchar = Tyger.makeimage(ord(board.msg[x]), Tyger.green, Tyger.bgblack) #Create the character
+            tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+        
+        board.statcoords.append((-1, -1))
+        global TextMessage
+        TextMessage = tempimg
+    return
+
 def Restore(oop, current):
     while oop.find("'" + current.split(" ")[1]) != -1:
         oop = oop.replace("'" + current.split(" ")[1], ":" + current.split(" ")[1])
@@ -406,6 +498,168 @@ def Take(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys,
     #Take failed!
     print "Take failed!"
     return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys
+  
+def TextBox(message, name, screen):
+    messagebox = pygame.Surface((392, 266)) #Create the empty surface
+    messagebox.fill(Tyger.bgdarkblue)
+    
+    #Parse the name if needed
+    if name[0] != "@":
+        name = " Interaction" #The space is because the first char is cut off later
+    
+    #Top row
+    messagebox.blit(Tyger.makeimage(198, Tyger.white, Tyger.bgblack), (0,0))
+    messagebox.blit(Tyger.makeimage(209, Tyger.white, Tyger.bgblack), (8,0))
+    for offset in xrange(0, 45):
+        messagebox.blit(Tyger.makeimage(205, Tyger.white, Tyger.bgblack), ((8*offset)+16,0))
+    messagebox.blit(Tyger.makeimage(209, Tyger.white, Tyger.bgblack), (376,0))
+    messagebox.blit(Tyger.makeimage(181, Tyger.white, Tyger.bgblack), (384,0))
+    
+    #Bottom row
+    messagebox.blit(Tyger.makeimage(198, Tyger.white, Tyger.bgblack), (0,252))
+    messagebox.blit(Tyger.makeimage(207, Tyger.white, Tyger.bgblack), (8,252))
+    for offset in xrange(0, 45):
+        messagebox.blit(Tyger.makeimage(205, Tyger.white, Tyger.bgblack), ((8*offset)+16,252))
+    messagebox.blit(Tyger.makeimage(207, Tyger.white, Tyger.bgblack), (376,252))
+    messagebox.blit(Tyger.makeimage(181, Tyger.white, Tyger.bgblack), (384,252))
+    
+    #Sidebars
+    for offset in xrange(0,17):
+        messagebox.blit(Tyger.makeimage(32, Tyger.white, Tyger.bgblack), (0,(14*offset)+14))
+        messagebox.blit(Tyger.makeimage(179, Tyger.white, Tyger.bgblack), (8,(14*offset)+14))
+        messagebox.blit(Tyger.makeimage(179, Tyger.white, Tyger.bgblack), (376,(14*offset)+14))
+        messagebox.blit(Tyger.makeimage(32, Tyger.white, Tyger.bgblack), (384,(14*offset)+14))
+    
+    #Split between name and message
+    messagebox.blit(Tyger.makeimage(198, Tyger.white, Tyger.bgblack), (8,28))
+    messagebox.blit(Tyger.makeimage(181, Tyger.white, Tyger.bgblack), (376,28))
+    for offset in xrange(0, 45):
+        messagebox.blit(Tyger.makeimage(205, Tyger.white, Tyger.bgblack), ((8*offset)+16,28))
+    
+    #The little arrows to indict your line. 175, 174
+    messagebox.blit(Tyger.makeimage(175, Tyger.red, Tyger.bgdarkblue), (16,140))
+    messagebox.blit(Tyger.makeimage(174, Tyger.red, Tyger.bgdarkblue), (368,140))
+    
+    #---------------------------------------------------------------------------------------
+    #Render the name
+    name = name[1:] #Cut off the leading @
+    if (len(name) > 1) and (len(name) % 2 != 1): #Even name, can't be centered
+        name = " " + name #Just add a leading space to make it odd
+
+    tempimg = pygame.Surface((8*len(name), 14)) #Create a surface for the name
+    tempimg.fill(Tyger.bgdarkblue)    
+    for x in range(0, len(name)): #Then for every character of text in that list... (chopping off the .zzt)
+        tempchar = Tyger.makeimage(ord(name[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
+        tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+    
+    offset = (round(len(name) / 2.) - 1) * 8 #Calculate offset to center text
+    messagebox.blit(tempimg, ((192 - offset),14))
+    
+    #---------------------------------------------------------------------------------------
+    lines = []
+    
+    #Add in the starting blank lines (I am so cheating by doing it this way!)
+    blank       = pygame.Surface((344, 14))
+    blank.fill(Tyger.bgdarkblue)
+    for _ in xrange(0, 6):
+        lines.append(blank)
+    
+    #Render the header/footer bullets
+    rawbullets  = "                                  "
+    tempimg = pygame.Surface((344, 14)) #Create a surface for the name
+    tempimg.fill(Tyger.bgdarkblue)    
+    for x in range(0, len(rawbullets)): #Then for every character of text in that list... (chopping off the .zzt)
+        tempchar = Tyger.makeimage(ord(rawbullets[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
+        tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+    lines.append(tempimg)
+    #Render the lines of text
+    rawlines = message.split("\n")[:-1]
+    #print "RAW LINES = ", rawlines
+    
+    for rawline in rawlines:
+        tempimg = pygame.Surface((336, 14)) #Create a surface for the name
+        tempimg.fill(Tyger.bgdarkblue)    
+        for x in range(0, len(rawline)): #Then for every character of text in that list... (chopping off the .zzt)
+            tempchar = Tyger.makeimage(ord(rawline[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
+            tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+        lines.append(tempimg) #Add the actual message
+        #lines.pop() #But get rid of the extra newline it probably adds
+    
+    lines.append(lines[6]) #Add the header bullets as footer bullets
+    #Add in the finishing blank lines
+    for _ in xrange(0, 6):
+        lines.append(blank)
+
+    #---------------------------------------------------------------------------------------
+    #Draw the current lines to the Messagebox
+    top = 0
+    
+    for start in range(top, top+15):
+        messagebox.blit(lines[start], (32, 42+(start*14)))
+    
+    #---------------------------------------------------------------------------------------
+    #Draw the Messagebox
+    screen.blit(messagebox, (40, 42))
+    pygame.display.update()
+    
+    #---------------------------------------------------------------------------------------
+    #Player input in window
+    input = "null"
+    while 1:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                exit()
+            if event.type == KEYDOWN:
+                        
+                """if event.key == K_F5: #Take screenshot
+                    screenshot = "screenshots/" + world.gamename + "-" + str(scrnum) + ".png"
+                    pygame.image.save(screen, screenshot)
+                    scrnum = scrnum + 1
+                    print("\nSaved screenshot as " + screenshot)"""
+                
+                #Read keys
+                if event.key == K_UP or pygame.key.get_pressed()[273]:
+                    input = "up"
+                elif event.key == K_DOWN or pygame.key.get_pressed()[274]:
+                    input = "down"
+                elif event.key == K_RETURN or pygame.key.get_pressed()[13]:
+                    input = "select"
+                elif event.key == K_ESCAPE or pygame.key.get_pressed()[27]:
+                    return
+                else:
+                    input = "null"
+                    
+            if event.type == KEYUP:
+                if event.key == K_UP or event.key == K_DOWN:
+                    input = "null"
+        
+        #--------------------------------------
+        #Parse input
+        if input == "up" or input == "down":
+            top = top - (input == "up") + (input == "down")
+            if top < 0:
+                top = 0
+            elif top+15 > len(lines):
+                top = top + (input == "up") - (input == "down") #Undo your move
+            #print "Top:", top, "Top+15", top+15
+            messagebox.fill(Tyger.bgdarkblue, (368, 42, 8, 98)) #Fix that last bullet ghosting
+            messagebox.fill(Tyger.bgdarkblue, (368, 154, 8, 98)) #Fix that last bullet ghosting
+            for start in range(0, 15):
+                #print "Start:", start
+                messagebox.blit(lines[top+start], (32, 42+(start*14)))
+                
+            screen.blit(messagebox, (40, 42))
+            pygame.time.wait(100)
+            pygame.display.update()
+            #print "Screen drawn!"
+        elif input == "select":
+            #TBC. Choosing hyperlinks
+            return #For now just leave
+            
+    
+    #print "By the way, my name is...", name
+    #blah = raw_input("PAUSING for textbook junk")
+    return
     
 def Walk(current, x, y, board, object):
     dir = Elements.ParseDir(current.split(" ")[1:], x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.

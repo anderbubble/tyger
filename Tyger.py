@@ -29,6 +29,9 @@ hud     = config.readline().split("=")[1][1:-1]
 options.append(hud)
 options.append(config.readline().split("=")[1][1:-1])
 options.append(config.readline().split("=")[1][1:-1])
+options.append(config.readline().split("=")[1][1:-1])
+
+print "OPTIONS: ", options
 paldir  = "gfx/"
 #paldir  = "gfx/cga/"
 if hud != "min":
@@ -53,8 +56,9 @@ if hud == "min":
 else:
     status = pygame.image.load("gfx/sidebar.png")
 
-digits = pygame.image.load("gfx/digitsmin.png")
-keyimg = pygame.image.load("gfx/keysmin.png")
+digits = pygame.image.load("gfx/digitsmin.png")     #Digits for HUD
+keyimg = pygame.image.load("gfx/keysmin.png")       #Keys for HUD
+
 
 global blue
 global green
@@ -328,6 +332,12 @@ def main():
         #input = "null"
         
         #Erase any stats that no longer exist.
+        try:
+            while True:
+                board.statcoords.remove("pop")
+                #print "Popped"
+        except ValueError:
+            0 #We're clean
         
         #Update the time passed for timed boards
         if (board.timelimit != 0) and (intcycles % 10 == 0):
@@ -342,7 +352,11 @@ def main():
                 board = allboards[world.startboard]
             input = "null"
         
-        drawboard(screen, board)
+        if board.msglength != 0:
+            #print "Message images length:", len(message), message
+            drawboard(screen, board)
+        else:
+            drawboard(screen, board)
         drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, (board.timelimit - timepassed))
         
         #print str(options[2]) + "---------------------------"
@@ -451,7 +465,7 @@ class Element(object):
         #self.image = makeimage(self.character, self.foreground, self.background)
         self.image = 0
 
-def makeimage(character, foreground, background):
+def makeimage(character, foreground, background): #Returns a surface
     if character == 0:
         row = 0
     else:
@@ -901,6 +915,12 @@ def drawboard(screen, board):
             #Actually draw whatever needs to be drawn
             screen.blit(board.room[col][row].image, (row*8,col*14))
             
+            if board.msg != "":
+                #print "WHAT THE"
+                #screen.blit(Oop.TextMessage, (232-((8*len(board.msg)/2)),336))
+                offset = (round(len(board.msg) / 2.) - 1) * 8 #Calculate offset to center text
+                screen.blit(Oop.TextMessage, ((240 - offset),336))
+            
 def OopToArray(file, oopLength):
     #Read the oop to a string IF THERE'S OOP TO READ
     if oopLength == 0:
@@ -921,6 +941,7 @@ def getinfo(coords, board):
     row = x
     Dprint(str(x) + "," + str(y))
     Dprint(str(board.room[y][x]))
+    print str(board)
     #redraw!
     #board.room[y][x].character = board.room[col][row].param1
     #board.room[y][x].image = makeimage(board.room[col][row].param1, board.room[col][row].foreground, board.room[col][row].background)
@@ -1173,7 +1194,7 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     temp = read2(game)
     if temp != 65535 and temp != 12609:
         Dprint(str(temp) + "Invalid file")
-        exit()
+        #exit()
     else:
         Dprint("Valid ZZT file. Proceeding to load...")
     

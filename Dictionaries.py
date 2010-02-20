@@ -33,6 +33,7 @@ ClipDict = CollisionDict
 
 #Key color to array position. Simple enough.
 KeyDict = {"blue":0, "green":1, "cyan":2, "red":3, "purple":4, "yellow":5, "white":6, "black":7, "darkblue":0, "darkgreen":1, "darkcyan":2, "darkred":3, "darkpurple":4, "darkyellow":5, "gray":6, "darkgray":7}
+KeyIndexDict = {0:"Blue", 1:"Green", 2:"Cyan", 3:"Red", 4:"Purple", 5:"Yellow", 6:"White", 7:"Black"}
 
 #Door color to array position.
 DoorDict = {"blue":0, "green":1, "cyan":2, "red":3, "purple":4, "yellow":5, "white":6, "black":7, "darkblue":0, "darkgreen":1, "darkcyan":2, "darkred":3, "darkpurple":4, "darkyellow":5, "gray":6, "darkgray":7}
