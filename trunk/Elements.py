@@ -18,6 +18,24 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
     #print board.room[x][y].name
     #Check if it's a valid cycle for the Element to move on
     
+    if board.statcoords[position][0] == -1: #Flash the message if needed
+        if board.statcoords[position][1] > -35:
+            FlashDict = {0:Tyger.green, 1:Tyger.blue, 2:Tyger.white, 3:Tyger.yellow, 4:Tyger.purple, 5:Tyger.red, 6:Tyger.cyan}
+            #print "CycleS:", cycles % 7
+            tempimg = pygame.Surface((8*len(board.msg), 14)) #Create a surface for the message
+            tempimg.fill(Tyger.bgdarkblue)    
+            for x in range(0, len(board.msg)): #Then for every character of text in that list... (chopping off the .zzt)
+                tempchar = Tyger.makeimage(ord(board.msg[x]), FlashDict[cycles % 7], Tyger.bgblack) #Create the character
+                tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+            Oop.TextMessage = tempimg
+            temp = board.statcoords[position][1] - 1
+            board.statcoords[position] = (-1, temp)
+        else:
+            board.msg = ""
+            board.msglength = 0
+            DestroyStat(board, -1, -35)
+            #print "Stats now look like:", board.statcoords
+        return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     #print Tyger.options[0]
     if health > 0 and board.room[board.statcoords[0][0]][board.statcoords[0][1]].name == "player":
         try:
@@ -29,6 +47,7 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
             #print "Divided by 0! " + str(board.room[x][y].name) + "'s cycle is seen as: " + str(board.room[x][y].cycle)
             #print str(board.room[x][y])
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+    
     
     if board.room[x][y].name == "player" and health > 0:
         #print str(board.statcoords[0])
@@ -444,7 +463,7 @@ def ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, scor
         timepassed = 0
     return ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
-def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y):
+def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y, screen):
     cheat = raw_input("?")
     cheat = cheat.lower()
     
@@ -521,6 +540,13 @@ def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, ti
         print str(flags)
     elif cheat[0] == "-":
         flags = Oop.Clear(cheat[1:].upper(), flags)
+    elif cheat[0] == "#" or cheat[0] == "/" or cheat[0] == "?":
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].oop = cheat
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].oopLength = len(cheat)
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].line = 0
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].xstep = 0
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].ystep = 0
+        ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board = Object(board, board.statcoords[0][0], board.statcoords[0][1], "null", 0, 0, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, "null", board
     
 def CleanBomb(board, x, y):
@@ -640,9 +666,9 @@ def DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, 
     if board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].name == "key":
         slot = KeyDict[board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].foregroundcolor]
         if keys[slot] == 1:
-            print "You already have this key!!!!"
+            Oop.MessageLine("You already have a " + KeyIndexDict[slot] + " key!", screen, board, "Low")
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
-        print "Got a " + board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].foregroundcolor + " key."
+        Oop.MessageLine("You now have the " + KeyIndexDict[slot] + " key.", screen, board, "Low")
         keys[slot] = 1
         
     #Doors
@@ -870,11 +896,11 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #print str(object.line)
     
     while progress < 33: #Only 33 non-cycle ending commands can be executed at once.
+        #print "In the loop"
         progress = progress + 1
-        
-        #print object.oop
         if (object.oop == None) or (object.line == -1): #No oop, no work
             #print "Current line # is... " + str(object.line)
+            #print "Early break"
             break
         
         #print object.oop[object.line:]
@@ -895,6 +921,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             break
             
         if current[0] == "#" or current[0] == "/" or current[0] == "?" or current[0] == ":":
+            #print "Formatting # oop"
             current = current.lower()
         if current[0] == " ":
             current = "_" + current[1:] #Replace space with an underscore for now!
@@ -909,6 +936,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             board.room[x][y] = Oop.Become(current.split(" ")[1:], board, x, y)
         elif current.split(" ")[0] == "#bind": #
             print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
+            object = Oop.CopyCode(board, current.split(" ")[1], object)
         elif current.split(" ")[0] == "#change": #Continues
             print "THAT'S NOT #CHANGE WE CAN BELIEVE IN\r"
         elif current.split(" ")[0] == "#char": #Continues
@@ -960,19 +988,21 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             object.oop = object.oop.replace(":" + current.split(" ")[1], "'" + current.split(" ")[1], 1)
         elif current.split(" ")[0] == "#send" or current.split(" ")[0][0] == "#":
             NoAdvance = Oop.Send(current, board, object)
-        else: #Message
+        else: #Message Continues
             try:
                 if current.split(" ")[0][0] != "#" and current.split(" ")[0][0] != "/" and current.split(" ")[0][0] != "?" and current.split(" ")[0][0] != "@" and current.split(" ")[0][0] != ":" and current.split(" ")[0][0] != "'":
-                    print "---------------" + current + "---------------"
+                    NoAdvance, object = Oop.Message(object, screen, board)
+                    #print "---------------" + current + "---------------"
             except IndexError:
-                print "---------------" + current + "---------------"
-            progress = progress - 1
+                NoAdvance, object = Oop.Message(object, screen, board)
+                #print "---------------" + current + "-----indexerror"
+            #progress = progress - 1 #I don't think this is needed when the actual message box exists
         
     #Move to the next line if you're still going
         
         #print str(object.line) + " " + str(Moved) + " " + str(NoAdvance)
         if object.line != -1 and Moved == True and NoAdvance == False:
-            print "Advancing code"
+            #print "Advancing code"
             object.line = object.line + len(current) + 1
         #print "Line is... " + str(object.line + 1)
         #print str(object.oop[object.line + 1])
@@ -1030,7 +1060,10 @@ def ParseDir(input, x, y, Px, Py, xstep, ystep):
             choices.append("w")
         elif (Py > y):
             choices.append("e")
-        output = Tyger.random.sample(choices, 1)[0]
+        try:
+            output = Tyger.random.sample(choices, 1)[0]
+        except ValueError:
+            output = "i"
         return output
     elif input[0] == "rndns":
         return Tyger.random.sample(["n", "s"], 1)[0]
@@ -1159,7 +1192,7 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #Cheating
     if input == "cheat":
         print "CHEATS"
-        return Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y)
+        return Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y, screen)
     #Board switching
     if (input == "up" and (x-1 < 0)) or (input == "down" and (x+1 > 24)) or (input == "left" and (y-1 < 0)) or (input == "right" and (y+1 > 59)): #Walking off the edge
         ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board = ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed)
