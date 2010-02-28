@@ -68,6 +68,8 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
         return Blink(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif board.room[x][y].name == "bear":
         return Bear(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
+    elif board.room[x][y].name == "scroll":
+        Scroll(board, x, y, cycles)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Bear(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
@@ -656,6 +658,7 @@ def DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, 
     
     if item == "energizer":
         ecycles = 75
+        Oop.Send("#all:energize", board, None, -1, -1)
         
     if ecycles == 0:
             health = health - 10*(item == "lion" or item == "tiger" or item =="bear" or item == "ruffian" or item == "head" or item == "segment" or item == "bullet" or item == "star")
@@ -721,7 +724,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x-4][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x-4][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x-4][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD A"
         elif BombDict[board.room[x-4][y+offset].name] == "hurt" and ecycles == 0: #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
     
@@ -739,7 +743,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x-3][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x-3][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x-3][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD -5,6"
         elif BombDict[board.room[x-3][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
 
@@ -757,7 +762,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x-2][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x-2][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x-2][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD -6,7"
         elif BombDict[board.room[x-2][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10    
     
@@ -775,7 +781,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x-1][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x-1][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x-1][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD C"
         elif BombDict[board.room[x-1][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10   
     
@@ -793,7 +800,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD D"
         elif BombDict[board.room[x][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10   
     
@@ -811,7 +819,9 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x+4][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x+4][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            print board.room[x+4][y+offset].oop
+            Oop.SendJump(board.room[x+4][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD E"
         elif BombDict[board.room[x+4][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
     
@@ -829,7 +839,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x+3][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x+3][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x+3][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD F"
         elif BombDict[board.room[x+3][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
 
@@ -847,7 +858,8 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x+2][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x+2][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            Oop.SendJump(board.room[x+2][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD G"
         elif BombDict[board.room[x+2][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10    
     
@@ -865,7 +877,9 @@ def Explode(board, x, y, health, ecycles):
             else:
                 board.room[x+1][y+offset] = Tyger.Spawn("breakable", 177, Tyger.random.sample([Tyger.blue, Tyger.green, Tyger.cyan, Tyger.red, Tyger.purple, Tyger.yellow, Tyger.white], 1)[0], Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
         elif BombDict[board.room[x+1][y+offset].name] == "bombed": #If the thing is an object
-            print "YOU'RE ALL BLOODY DEAD"
+            print board.room[x+1][y+offset].oop
+            Oop.SendJump(board.room[x+1][y+offset], ":bombed")
+            print "YOU'RE ALL BLOODY DEAD H"
         elif BombDict[board.room[x+1][y+offset].name] == "hurt" and ecycles == 0: #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
     
@@ -920,6 +934,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             #print "Breaking"
             break
             
+        #print "Object's line# is...", object.line
         if current[0] == "#" or current[0] == "/" or current[0] == "?" or current[0] == ":":
             #print "Formatting # oop"
             current = current.lower()
@@ -935,8 +950,11 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             #print "I don't know shit, we gonna keep movin"
             board.room[x][y] = Oop.Become(current.split(" ")[1:], board, x, y)
         elif current.split(" ")[0] == "#bind": #
-            print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
+            #print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
             object = Oop.CopyCode(board, current.split(" ")[1], object)
+            print "Ok I'm at...", object.line
+            continue #Maybe?
+            #progress = 100
         elif current.split(" ")[0] == "#change": #Continues
             print "THAT'S NOT #CHANGE WE CAN BELIEVE IN\r"
         elif current.split(" ")[0] == "#char": #Continues
@@ -954,7 +972,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#endgame": #Continues
             health = 0
         elif current.split(" ")[0] == "#give": #Continues
-            ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys = Oop.Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current)
+            ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, NoAdvance = Oop.Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current, board, NoAdvance)
         elif current.split(" ")[0] == "#go" or current.split(" ")[0] == "#try" or current.split(" ")[0][0] == "/" or current.split(" ")[0][0] == "?": #Ends
             NoAdvance, Moved, progress = Oop.Go(current, x, y, board, object, NoAdvance, Moved, progress)
         elif current.split(" ")[0] == "#if": #Continues
@@ -985,9 +1003,9 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#walk": #Continues
             object.xstep, object.ystep = Oop.Walk(current, x, y, board, object)
         elif current.split(" ")[0] == "#zap": #Continues
-            object.oop = object.oop.replace(":" + current.split(" ")[1], "'" + current.split(" ")[1], 1)
+            object, board = Oop.Zap(object, board, current.split(" ")[1])
         elif current.split(" ")[0] == "#send" or current.split(" ")[0][0] == "#":
-            NoAdvance = Oop.Send(current, board, object)
+            NoAdvance = Oop.Send(current, board, object, x, y)
         else: #Message Continues
             try:
                 if current.split(" ")[0][0] != "#" and current.split(" ")[0][0] != "/" and current.split(" ")[0][0] != "?" and current.split(" ")[0][0] != "@" and current.split(" ")[0][0] != ":" and current.split(" ")[0][0] != "'":
@@ -1001,10 +1019,11 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #Move to the next line if you're still going
         
         #print str(object.line) + " " + str(Moved) + " " + str(NoAdvance)
+        #print "CODE CHECK!"
         if object.line != -1 and Moved == True and NoAdvance == False:
             #print "Advancing code"
             object.line = object.line + len(current) + 1
-        #print "Line is... " + str(object.line + 1)
+        #print "Line is... " + str(object.line)
         #print str(object.oop[object.line + 1])
         if object.line >= object.oopLength:
             object.line = -1
@@ -1012,6 +1031,10 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         
         NoAdvance = False
         Moved = True #Maybe? Play Fridgeraid to find out for sure.
+        
+        #if progress == 100: #No idea about this.
+        #    print "Breaking progress!"
+        #    break 
     #Post oop handling
     #if object.oopLength != 0:
         #print "Done OOPing about " + str(object.line) + " | " + str(object.oopLength)
@@ -1032,7 +1055,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             UpdateStat(board, x, y, x+object.ystep, y+object.xstep)
         else:
             Oop.SendJump(object, ":thud")
-    
+    #print "Returning!"
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 
@@ -1252,8 +1275,17 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         return Invisible(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[targetA][targetB].name)   
     elif CollisionDict[board.room[targetA][targetB].name] == "Passage": #Passage
         return Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed, targetA, targetB, flags)
-    elif CollisionDict[board.room[targetA][targetB].name] == "Touch": #Object (scroll?)
-        Oop.SendJump(board.room[targetA][targetB], ":touch")
+    elif CollisionDict[board.room[targetA][targetB].name] == "Scroll": #Scroll
+        ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board = Object(board, targetA, targetB, 0, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen)
+        board.room[targetA][targetB] = board.room[x][y]
+        board.room[x][y] = board.roomunder[x][y]
+        DestroyStat(board, targetA, targetB)
+        UpdateStat(board, x, y, targetA, targetB)
+        input = "null"
+    elif CollisionDict[board.room[targetA][targetB].name] == "Touch": #Object
+        Oop.SendJump(board.room[targetA][targetB], ":touch", True)
+        input = "null"
+        #Testing...
         #Tyger.Dprint("successful :touch")
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     elif CollisionDict[board.room[targetA][targetB].name] == "Push": #Pushing
@@ -1317,7 +1349,7 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
             if crush == True:
                 results.append(Tyger.Spawn("normal", 42, Tyger.white, Tyger.bgdarkblue, (666, 777), 0, 0, 0, 0, 0, 0)) #Pretend there's a normal wall instead of an infinite void. Clever girl.
         else:
-            #print "Moving along" + board.room[x+offA][y+offB].name + " | " + PushDict[results[-1].name]
+            #print "Moving along " + board.room[x+offA][y+offB].name + " | " + PushDict[results[-1].name]
             results.append(board.room[x+offA][y+offB]) #Add the next element to the array
         if (results[-1].name == "sliderns" and (input == "left" or input == "right")) or (results[-1].name == "sliderew" and (input == "up" or input == "down")):
             break
@@ -1336,6 +1368,7 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
                         else:
                             DestroyStat(board, x, y+statpos)
                         break
+                #print "SUSPICION CONFIRMED."
                 Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
                 break
                 #print str(results.pop())
@@ -1343,14 +1376,14 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
             else:
                 break #Fuck it we're not doing shit
         elif PushDict[results[-1].name] == "push":
-            #print "Push it to the limit " + results[-1].name
+            print "Push it to the limit " + results[-1].name
             continue
         if PushDict[results[-1].name] == "go":
             #Pop the last element as it's a fake or empty and MEANINGLESS.
             results.pop()
             while len(results) > 0:
                 board.room[x+offA][y+offB] = results[-1]
-                #print "Updating stats"
+                print "Updating stats"
                 if input == "right" or input == "down":
                     UpdateStat(board, x+(len(results)-1)*(offA > 0), y+(len(results)-1)*(offB > 0), x+offA, y+offB)
                 elif input == "up":
@@ -1412,6 +1445,10 @@ def Pusher(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #print "Sending Push function " + pushdir
     Push(board, x, y, pushdir, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[x][y].xstep, board.room[x][y].ystep)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+
+def Scroll(board, x, y, cycles):
+        ScrollDict = {0:Tyger.white, 1:Tyger.blue, 2:Tyger.green, 3:Tyger.cyan, 4:Tyger.red, 5:Tyger.purple, 6:Tyger.yellow}
+        board.room[x][y].foreground = ScrollDict[cycles % 7]
 
 def UnderOver(underID, underColor, coords):
     #Create an element based on what's underneath

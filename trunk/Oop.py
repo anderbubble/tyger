@@ -51,7 +51,7 @@ def Cycle(cycle, current):
     try:
         cycle = int(cycle)
         if (cycle >= 0) and (cycle <= 255): #Make sure the cycle's range is good
-            print "Setting cycle to", cycle
+            #print "Setting cycle to", cycle
             return cycle
         else:
             return current
@@ -63,9 +63,9 @@ def Die(board, x, y):
     Elements.DestroyStat(board, x, y)
     return element
     
-def Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current):
+def Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current, board, NoAdvance):
     print "HEADS UP"
-    print str(current)
+    #print str(current)
     if current.split(" ")[1] != "key":
         try:
             ammo = ammo + (int(current.split(" ")[2]) * (current.split(" ")[1] == "ammo"))
@@ -78,13 +78,17 @@ def Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys,
             timepassed = timepassed - (int(current.split(" ")[2]) * (current.split(" ")[1] == "seconds"))
             tcycles = tcycles + (int(current.split(" ")[2]) * (current.split(" ")[1] == "light"))
             ecycles = ecycles + (int(current.split(" ")[2]) * (current.split(" ")[1] == "invuln"))
+            if current.split(" ")[1] == "invuln":
+                Send("#all:energize", board, None, -1, -1)
+                return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, True
+                #SendJump(board.room[position[0]][position[1]], label, True)
         except IndexError:
             ecycles = 75 * (current.split(" ")[1] == "energizer")
         except ValueError:
-            return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys
+            return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, NoAdvance
     elif current.split(" ")[1] == "key":
         keys[KeyDict[current.split(" ")[2]]] = 1
-    return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys
+    return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, NoAdvance
 
 def Go(current, x, y, board, object, NoAdvance, Moved, progress):
     #print object.oop[0:15] + "IS THE OBJECT"
@@ -113,8 +117,16 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
     #if board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "empty":
     
     if dir == "i":
-        print "Idling"
+        moved = False
+        NoAdvance = True
+        object.line = object.line + 2
+        if object.oop[object.line] == "\n":
+            object.line = object.line + 1
+        #print "Idling line:", object.line, "Moved:", moved
+        #print object.oop[object.line:object.line+15]
+        print "IDLED."
         progress = 100
+        
         return NoAdvance, Moved, progress
     
     if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
@@ -128,16 +140,22 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
         Elements.UpdateStat(board, x, y, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"))
         Moved = True
         progress = 100 #Ok you're done parsing oop this cycle
-        print "OK I MOVED!"
+        #print "OK I MOVED!"
         if current[0] == "#": #If you're #go-ing
             NoAdvance = False
         #break
     elif ObjectDict[board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name] == "Push":
         #print "No pushing yet"
-        Moved = False
+        #Moved = True
         #print "Shove it!"
         #object.name = "player"
-        #Push(board, x, y, dir, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[x][y].xstep, board.room[x][y].ystep)
+        Elements.Push(board, x, y, dir, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        if board.room[x][y].name == "object": #If you failed to move with pushing
+            Moved = False
+        else:
+            Moved = True
+            progress = 100 #These 30 million variables that determine how the code is advanced is the worst thing of all time.
+        #print "Nope"
         #object.name = "object"
         #print "Left push"
         #Retry = False
@@ -161,7 +179,7 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
     #/ and ? cleanup!
     if current[0] == "/" or current[0] == "?" and Moved == True: #Do some funny rewininding through the code so the automatic movement ahead makes you sync
         NoAdvance = True #We're going to advance the code manually
-        print "Current is..." + str(current) + " ... " + str(command)
+        #print "Current is..." + str(current) + " ... " + str(command)
         
         current = current[1:] #Get rid of the identifier for the command we already executed ie /n/s/e/w = n/s/e/w
         object.line = object.line + 1
@@ -260,19 +278,19 @@ def If(current, object, x, y, board, ecycles, flags):
     elif statement[0] == "contact":
         statement.pop(0) #Remove the contact
         if y-1 >= 0 and result == False: #Look left
-            if board.statcoords[0][1] == (y-1):
+            if (board.statcoords[0][1] == (y-1)) and (board.statcoords[0][0] == x):
                 #print "Left contact!"
                 result = True
         if y+1 <= 59 and result == False: #Look right
-            if board.statcoords[0][1]  == (y+1):
+            if (board.statcoords[0][1]  == (y+1)) and (board.statcoords[0][0] == x):
                 result = True
                 #print "Right contact!"
         if x-1 >= 0 and result == False: #Look up
-            if board.statcoords[0][0] == (x-1):
+            if (board.statcoords[0][0] == (x-1)) and (board.statcoords[0][1] == y):
                 #print "Up contact!"
                 result = True
         if x+1 <= 24 and result == False: #Look down
-            if board.statcoords[0][0] == (x+1):
+            if (board.statcoords[0][0] == (x+1)) and (board.statcoords[0][1] == y):
                 #print "Down contact!"
                 result = True
         #if x-1 < 0 or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
@@ -288,7 +306,12 @@ def If(current, object, x, y, board, ecycles, flags):
                 statement.pop(0) #Remove the flag name
                 print "Flaggot"
                 break
-        print "Fla"
+        #print "Fla"
+    
+    #Remove any THEN's/
+    if statement[0] == "then":
+        print "--------------------------------POPPING A THEN!"
+        statement.pop(0)
     
     #Flip a NOT prefix
     if opposite == True:
@@ -309,7 +332,7 @@ def If(current, object, x, y, board, ecycles, flags):
     else:
         NoAdvance = False
         Moved = True
-        print "Line is:", object.line
+        #print "Line is:", object.line
     return NoAdvance, Moved, object
 
 def Message(object, screen, board):
@@ -347,7 +370,10 @@ def Message(object, screen, board):
     #At this point the message is properly split line by line!
     
     if Multiline:
-        TextBox(message, object.oop.split("\n")[0], screen)
+        label = TextBox(message, object.oop.split("\n")[0], screen)
+        if label != None:
+            SendJump(object, label)
+            return NoAdvance, object
     else:
         
         MessageLine(message, screen, board)
@@ -381,9 +407,9 @@ def Restore(oop, current):
         oop = oop.replace("'" + current.split(" ")[1], ":" + current.split(" ")[1])
     return oop
 
-def Send(current, board, object):
+def Send(current, board, object, x, y):
     #print "SEND COMMAND", current
-        
+    #Send("#all:energize", board, None, -1, -1)
     if current.split(" ")[0] == "#send":
         #print current.split(" ")[1]
         command = current.split(" ")[1] #Reduce the command to an object and a label at most
@@ -407,15 +433,21 @@ def Send(current, board, object):
                         code = board.room[position[0]][position[1]].oop.lower() #Read its name if it has one
                         code = code.split("\n")[0]
                         #print code
-                        if code[1:] == name: #if the object and #send name match
+                        if code[1:] == name or name == "all": #if the object and #send name match
+                            SendJump(board.room[position[0]][position[1]], label, True)
+                        elif name == "others" and ((position[0], position[1]) != (x, y)):
                             SendJump(board.room[position[0]][position[1]], label, True)
     return False #This lets the object that did #send continue updating its code.
     
 def SendJump(object, label, extsend=False):
-    if (object.oop == None) or (object.param2 == 1) or (object.oop.lower().find(label) == -1 and extsend == True): #No oop or a lock
+    #print "SENDJUMP!"
+    if (object.oop == None) or (object.param2 == 1) or (object.oop.lower().find("\n" + label) == -1 and extsend == True): #No oop or a lock
+        #print "Oop", object.oop
+        #print "P2:", object.param2
         return                                                                                                     #or external object lacks the label
-    #print "Jumping to label", label
-    object.line = object.oop.lower().find(label) #Find the label
+    #print "Object Jumping to label", label, extsend
+    object.line = object.oop.lower().find("\n" + label) #Find the label
+    #print "Object line now:", object.line
     return
 
 def Set(flag, flags):
@@ -548,7 +580,7 @@ def TextBox(message, name, screen):
 
     tempimg = pygame.Surface((8*len(name), 14)) #Create a surface for the name
     tempimg.fill(Tyger.bgdarkblue)    
-    for x in range(0, len(name)): #Then for every character of text in that list... (chopping off the .zzt)
+    for x in range(0, len(name)): #Then for every character of text in the name
         tempchar = Tyger.makeimage(ord(name[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
         tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
     
@@ -568,7 +600,7 @@ def TextBox(message, name, screen):
     rawbullets  = "                                  "
     tempimg = pygame.Surface((344, 14)) #Create a surface for the name
     tempimg.fill(Tyger.bgdarkblue)    
-    for x in range(0, len(rawbullets)): #Then for every character of text in that list... (chopping off the .zzt)
+    for x in range(0, len(rawbullets)): #Then for every character of text in that header/footer
         tempchar = Tyger.makeimage(ord(rawbullets[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
         tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
     lines.append(tempimg)
@@ -576,12 +608,41 @@ def TextBox(message, name, screen):
     rawlines = message.split("\n")[:-1]
     #print "RAW LINES = ", rawlines
     
+    #Render the text itself
     for rawline in rawlines:
         tempimg = pygame.Surface((336, 14)) #Create a surface for the name
         tempimg.fill(Tyger.bgdarkblue)    
-        for x in range(0, len(rawline)): #Then for every character of text in that list... (chopping off the .zzt)
-            tempchar = Tyger.makeimage(ord(rawline[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
-            tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+        
+        try:
+            if rawline[0] == "$": #White and centered
+                offset = ((42-len(rawline)-1)/2)*8+(8*(len(rawline)%2 == 0))
+                print offset
+                for x in range(1, len(rawline)): #Then for every character of text in that list...
+                    tempchar = Tyger.makeimage(ord(rawline[x]), Tyger.white, Tyger.bgdarkblue) #Create the character
+                    tempimg.blit(tempchar, ((x*8-8)+offset,0)) #Stamp it onto the surface for the line
+
+            elif rawline[0] == "!" and rawline[1] != "-": #Regular hypertext
+                parsedline = "    " + rawline[rawline.find(";")+1:]
+                for x in range(0, len(parsedline)): #Then for every character of text in that list...
+                    if x != 2:
+                        tempchar = Tyger.makeimage(ord(parsedline[x]), Tyger.white, Tyger.bgdarkblue) #Create the character
+                    else:
+                        tempchar = Tyger.makeimage(ord(parsedline[x]), Tyger.purple, Tyger.bgdarkblue) #Create the purple arrow
+                    tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+            elif rawline[0] == "!" and rawline[1] == "-": #External hypertext
+                parsedline = "    " + rawline[rawline.find(";")+1:]
+                for x in range(0, len(parsedline)): #Then for every character of text in that list...
+                    if x != 2:
+                        tempchar = Tyger.makeimage(ord(parsedline[x]), Tyger.white, Tyger.bgdarkblue) #Create the character
+                    else:
+                        tempchar = Tyger.makeimage(ord(parsedline[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the purple arrow
+                    tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+            else: #Standard yellow text
+                for x in range(0, len(rawline)): #Then for every character of text in that list...
+                    tempchar = Tyger.makeimage(ord(rawline[x]), Tyger.yellow, Tyger.bgdarkblue) #Create the character
+                    tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+        except IndexError:
+            0 #Ignore me.
         lines.append(tempimg) #Add the actual message
         #lines.pop() #But get rid of the extra newline it probably adds
     
@@ -622,25 +683,31 @@ def TextBox(message, name, screen):
                     input = "up"
                 elif event.key == K_DOWN or pygame.key.get_pressed()[274]:
                     input = "down"
+                elif event.key == K_PAGEUP:
+                    input = "pgup"
+                elif event.key == K_PAGEDOWN:
+                    input = "pgdown"
                 elif event.key == K_RETURN or pygame.key.get_pressed()[13]:
                     input = "select"
                 elif event.key == K_ESCAPE or pygame.key.get_pressed()[27]:
-                    return
+                    return None
                 else:
                     input = "null"
                     
             if event.type == KEYUP:
-                if event.key == K_UP or event.key == K_DOWN:
-                    input = "null"
+                input = "null"
         
         #--------------------------------------
         #Parse input
-        if input == "up" or input == "down":
-            top = top - (input == "up") + (input == "down")
+        if input == "up" or input == "down" or input =="pgup" or input == "pgdown":
+            top = top - (input == "up") + (input == "down") - (14*(input=="pgup")) + (14*(input=="pgdown"))
             if top < 0:
                 top = 0
             elif top+15 > len(lines):
-                top = top + (input == "up") - (input == "down") #Undo your move
+                top = top + (input == "up") - (input == "down") + (14*(input=="pgup")) - (14*(input=="pgdown")) #Undo your move
+                if input == "pgdown":
+                    top = len(lines)-15
+                #print "What"
             #print "Top:", top, "Top+15", top+15
             messagebox.fill(Tyger.bgdarkblue, (368, 42, 8, 98)) #Fix that last bullet ghosting
             messagebox.fill(Tyger.bgdarkblue, (368, 154, 8, 98)) #Fix that last bullet ghosting
@@ -654,15 +721,53 @@ def TextBox(message, name, screen):
             #print "Screen drawn!"
         elif input == "select":
             #TBC. Choosing hyperlinks
-            return #For now just leave
+            #print rawlines[top], "is the active line?"
+            try:
+                if rawlines[top][0] == "!" and rawlines[top][1] != "-": #if you have a regular hyperlink
+                    label = rawlines[top].split(";")[0][1:] #Extract the label
+                    if label == "":
+                        return None
+                    return ":" + label
+                if rawlines[top][0] == "!" and rawlines[top][1] == "-": #if you have an external file to display
+                    filename = rawlines[top].split(";")[0][2:] #Extract the filename
+                    #print filename ,"will be opened"
+                    try:
+                        file = open(filename, "r")
+                        TextBox(file.read(), filename, screen)
+                        file.close()
+                    except IOError:
+                        print "File" + filename + "could not be opened!"
+            except IndexError:
+                return None
+            return None #Leave
             
     
     #print "By the way, my name is...", name
     #blah = raw_input("PAUSING for textbook junk")
-    return
+    return None
     
 def Walk(current, x, y, board, object):
     dir = Elements.ParseDir(current.split(" ")[1:], x, y, board.statcoords[0][0], board.statcoords[0][1], object.xstep, object.ystep) #Get the raw direction "n", "s", "seek", etc.
     #object.xstep = WalkDict[dir][0]
     #object.ystep = WalkDict[dir][1]
     return WalkDict[dir][0], WalkDict[dir][1]
+    
+def Zap(object, board, current):
+    try:
+        name = current.split(":")[0]
+        label = current.split(":")[1]
+        #Search the board for any objects that have that name
+        for position in board.statcoords: #Look at every stat on the screen
+            if position != "pop": #Check the stat isn't in limbo
+                if board.room[position[0]][position[1]].name == "object": #Check that you're looking at an object
+                    if board.room[position[0]][position[1]].oop != None: #Check that the object has oop
+                        code = board.room[position[0]][position[1]].oop.lower() #Read its name if it has one
+                        code = code.split("\n")[0]
+                        #print code
+                        if code[1:] == name or name == "all": #if the object and #send name match
+                            board.room[position[0]][position[1]].oop = board.room[position[0]][position[1]].oop.replace("\n:" + label, "\n'" + label, 1)
+    except IndexError:
+        name = None
+        label = current
+        object.oop = object.oop.replace("\n:" + label, "\n'" + label, 1)
+    return object, board

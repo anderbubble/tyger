@@ -40,7 +40,7 @@ else:
     res = (480, 364)
 
 global framerate
-framerate = 1 #Maximum frames per second
+framerate = 10 #Maximum frames per second
 #framerate = 9.1032548384 #Maximum frames per second
 """ Quantum P on ZZT's framerate:
 I immediately remembered reading DOS programming tutorials about the PIT timer, because it has a wacky frequency: 1.193182 MHz.
@@ -213,7 +213,7 @@ def main():
     #Screenshots and Screenrecords
     games = glob.glob("screenshots\\" + world.gamename + "*.png")
     scrnum = len(games)  #Screenshot number
-    capture = glob.glob("record\\" + world.gamename + "*.png")
+    capture = len(glob.glob("record\\" + world.gamename + "*.png"))
     record = False
     
     #MAIN GAME LOOP
@@ -304,11 +304,12 @@ def main():
             if event.type == MOUSEBUTTONUP and event.button == 3:
                 global bgdarkblue
                 bgdarkblue = (100, 200, 50, 255)
-                getinfo(pygame.mouse.get_pos(), board)
+                getinfo(pygame.mouse.get_pos(), board, screen)
         
         #Timing
         #Death speedup:
         if health < 1 or board.room[board.statcoords[0][0]][board.statcoords[0][1]].name == "RIP":
+            Oop.MessageLine("GAME OVER - PRESS ESCAPE", screen, board, priority="High")
             global framerate
             framerate = framerate*10
         time = clock.tick(framerate)
@@ -352,11 +353,7 @@ def main():
                 board = allboards[world.startboard]
             input = "null"
         
-        if board.msglength != 0:
-            #print "Message images length:", len(message), message
-            drawboard(screen, board)
-        else:
-            drawboard(screen, board)
+        drawboard(screen, board)
         drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, (board.timelimit - timepassed))
         
         #print str(options[2]) + "---------------------------"
@@ -933,15 +930,22 @@ def OopToArray(file, oopLength):
     """ZZT's current instruction is how many characters into the oop not how many lines!"""
     return array
 
-def getinfo(coords, board):
+def getinfo(coords, board, screen):
     x, y = coords
     x = int(math.floor(x/8))
     y = int(math.floor(y/14))
     col = y
     row = x
-    Dprint(str(x) + "," + str(y))
-    Dprint(str(board.room[y][x]))
-    print str(board)
+    
+    if x > 59 or y > 24:
+        message = str(board)
+        print str(board)
+    #Dprint(str(x) + "," + str(y))
+    #Dprint(str(board.room[y][x]))
+    else:
+        message = str(board.room[y][x])
+        print str(board.room[y][x])
+    Oop.TextBox(message, "-= Tyger Debug Info =-", screen)
     #redraw!
     #board.room[y][x].character = board.room[col][row].param1
     #board.room[y][x].image = makeimage(board.room[col][row].param1, board.room[col][row].foreground, board.room[col][row].background)
@@ -1156,7 +1160,7 @@ def Dprint(text, file=logfile):
 def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     global framerate
     #framerate = 9.1032548384
-    framerate = 9
+    framerate = 10
     #framerate = 1
     loading = pygame.image.load("gfx/loading.png")
     screen.blit(loading, (192,154))
