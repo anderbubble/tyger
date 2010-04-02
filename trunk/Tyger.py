@@ -18,22 +18,48 @@ from sys import exit
 from Dictionaries import *      #Dictionaries
 from Hud import *               #HUD and minhud features
 from Title import *             #Title screen for world/save selecting
-from Elements import *            #Handling of every element
+from Elements import *          #Handling of every element
+
+
+#------------------------------------------------------------------------------------------------------------
+#   Tyger
+#------------------------------------------------------------------------------------------------------------
+
+#Check for essential files.
+Error = None
 
 #Debug file
 logfile = open("Tyger.log", "w")
-#Options:
-options = []
-config  = open("tyger.cfg", "r")
-hud     = config.readline().split("=")[1][1:-1]
-options.append(hud)
-options.append(config.readline().split("=")[1][1:-1])
-options.append(config.readline().split("=")[1][1:-1])
-options.append(config.readline().split("=")[1][1:-1])
 
+#Read in settings
+options = []
+try:
+    config  = open("tyger.cfg", "r")
+    
+    while True:
+        setting = config.readline()
+        if setting == "":
+            break
+        options.append(setting.split("=")[1][1:-1])
+    
+except IOError:
+    print "ERROR - File tyger.cfg not found!"
+    print "Using default values instead."
+    Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find the\n  ####              file:\n$                       tyger.cfg  \n  ####    Without this file you will be\n  ####    unable to access some settings.\n"
+    options.append("min")
+    options.append("False")
+    options.append("False")
+    options.append("False")
+    options.append("False")
+
+hud = options[0] #Set up the HUD variable
+    
 print "OPTIONS: ", options
-paldir  = "gfx/"
+paldir  = "gfx/" #Set directory for pallete
+
 #paldir  = "gfx/cga/"
+
+#Determine base resolution
 if hud != "min":
     res = (640, 350)
 else:
@@ -188,8 +214,18 @@ def main():
     pygame.display.set_icon(icon)
     screen = pygame.display.set_mode(RESOLUTION) #NOFRAME alt param
     
+    #Force an error for debugging...
+    #Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find the\n  ####              file:\n$                       tyger.cfg  \n  ####    Without this file you will be\n  ####    unable to access some settings.\n"
+    #Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              valid ZZT files!\n\n  ####    Because of this you may only\n  ####    load saves at this time.\n"
+    #Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              games or saves!\n\n  ####    Please place any games in your\n  ####    Tyger folder. You can find new\n          ZZT and Tyger worlds at:\n\n$    http://zzt.belsambar.net \n"
+    
+    
+    #Check for any errors
+    if Error != None:
+        Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
+    
     #Do the whole title screen thing for Tyger
-    zztfile = titlescreen(screen, RESOLUTION)
+    zztfile = titlescreen(screen, RESOLUTION, Error)
 
     #Start a new game
     world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
@@ -359,7 +395,8 @@ def main():
         #print str(options[2]) + "---------------------------"
         #print str(screen) + "Pre zoom screen"
         if options[2] == "True": #If we want double screen
-            double = pygame.transform.scale2x(screen)
+            #double = pygame.transform.scale2x(screen)
+            double = pygame.transform.scale(screen, (screen.get_width()*2, screen.get_height()*2))
             screen.blit(double, (0,0))
             #print str(screen) + "Post zoom"
         pygame.display.update()
@@ -421,7 +458,7 @@ class World(object):
 class Element(object):
     
     def __str__(self):
-        part1 = "Name: " + self.name + "\n" + "Char: " + str(self.character) + "\n" + "Fore: " + str(self.foreground) + str(self.foregroundcolor) +"\n" + "Back: " + str(self.background) + "\n" + "X/Y : " + str(self.coords)
+        part1 = "Name: " + self.name + "\n" + "Char: " + str(self.character) + "\n" + "Fore: " + str(self.foreground) + " " + str(self.foregroundcolor) +"\n" + "Back: " + str(self.background) + " " + str(self.backgroundcolor) + "\n" + "X/Y : " + str(self.coords)
         part2 = "\nX-Step: " + str(self.xstep) + "\nY-Step: " + str(self.ystep) + "\nCycle: " + str(self.cycle) + "\nParams 1-3: " + str(self.param1) + "/" + str(self.param2) + "/" + str(self.param3)
         part3 = "\nFollow/Lead #: " + str(self.follownum) + "/" + str(self.leadnum) + "\nUnder ID+Color: " + str(self.underID) + "/" + str(self.underColor) + "\nCurrent Line: " + str(self.line)
         part4 = "\nOOP-Length: " + str(self.oopLength) + "\n==========ZZT-OOP==========\n"

@@ -948,7 +948,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         #print "++++", current + "=-=-=-="
         if current.split(" ")[0] == "#become": #Ends!
             #print "I don't know shit, we gonna keep movin"
-            board.room[x][y] = Oop.Become(current.split(" ")[1:], board, x, y)
+            board.room[x][y], NoAdvance = Oop.Become(current.split(" ")[1:], board, x, y, current)
         elif current.split(" ")[0] == "#bind": #
             #print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
             object = Oop.CopyCode(board, current.split(" ")[1], object)
@@ -983,13 +983,13 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             object.param2 = 1
         elif current.split(" ")[0] == "#play": #Continues
             print "I got my problems, and my problems they got me...\r"
-        elif current.split(" ")[0] == "#put": #-
+        elif current.split(" ")[0] == "#put": #Continues
             print "POOT SENTRY HERE\r"
         elif current.split(" ")[0] == "#restart": #Continues
             object.line = 0
             continue
         elif current.split(" ")[0] == "#restore": #continues
-            object.oop = Oop.Restore(object.oop, current)
+            object, board = Oop.Restore(object, board, current.split(" ")[1])
         elif current.split(" ")[0] == "#set": #continues
             flags = Oop.Set(current.split(" ")[1], flags)
         elif current.split(" ")[0] == "#shoot" or current.split(" ")[0] == "#throwstar": #Ends
@@ -1233,6 +1233,10 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 elif tile.name == "fake" or tile.name == "water":
                     board.roomunder[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")] = board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")]
                     bullet = Tyger.Spawn("bullet", 248, Tyger.white, board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")].background, tile.coords, ((input=="shootright") - (input=="shootleft")), ((input=="shootdown") - (input=="shootup")), 1, 0, 0, 0)
+                elif tile.name == "object" and Tyger.options[4] == "True": #Point blank shooting option
+                    Oop.SendJump(board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")], ":shot") #Send the object to the label
+                    ammo = ammo - 1
+                    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
                 else: #Otherwise we can't spawn a bullet
                     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
                 
@@ -1247,6 +1251,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                     print "Not enough ammo!"
                 return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     #Moving
+    
+    #Check for no-stick clones
+    
     if input == "up":
         targetA = x-1
         targetB = y
@@ -1261,8 +1268,12 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         targetB = y+1
     else:
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
-
-    if CollisionDict[board.room[targetA][targetB].name] == "walkable": #If the player didn't attempt to walk off the border
+    
+    
+    if CollisionDict[board.room[targetA][targetB].name] == "walkable" : #If the player didn't attempt to walk off the border
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         board.roomunder[targetA][targetB] = board.room[targetA][targetB] #Put the space to be overwritten on the under layer
         board.room[targetA][targetB] = board.room[board.statcoords[0][0]][board.statcoords[0][1]] #The player occupies two tiles at once, quantum physics itc.
         #Replace old tile with what was underneath it
@@ -1270,12 +1281,21 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         board.statcoords[0] = (targetA, targetB)
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     elif CollisionDict[board.room[targetA][targetB].name] == "DieItem": #We need to handle this based on what you've bumped into
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         return DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[targetA][targetB].name, allboards, screen)
     elif CollisionDict[board.room[targetA][targetB].name] == "InvisWall": #Invisible wall
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         return Invisible(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[targetA][targetB].name)   
     elif CollisionDict[board.room[targetA][targetB].name] == "Passage": #Passage
         return Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed, targetA, targetB, flags)
     elif CollisionDict[board.room[targetA][targetB].name] == "Scroll": #Scroll
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board = Object(board, targetA, targetB, 0, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen)
         board.room[targetA][targetB] = board.room[x][y]
         board.room[x][y] = board.roomunder[x][y]
@@ -1289,6 +1309,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         #Tyger.Dprint("successful :touch")
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     elif CollisionDict[board.room[targetA][targetB].name] == "Push": #Pushing
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         if board.room[targetA][targetB].name == "bomb" and board.room[targetA][targetB].param1 == 0: #If it's a bomb, activate it.
             board.room[targetA][targetB].param1 = 9
             board.room[targetA][targetB].character = 57
@@ -1296,6 +1319,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board #Bombs don't move when you first light them
         return Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif CollisionDict[board.room[targetA][targetB].name] == "ChangeBoard": #Edge of boards that aren't edges
+        if (Tyger.options[1] != "True" and position != 0):
+            print "No sticky clones!"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board = ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
