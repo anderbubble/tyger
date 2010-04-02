@@ -4,7 +4,7 @@ import glob
 from pygame.locals import *
 from Tyger import *
 
-def titlescreen(screen, RESOLUTION):
+def titlescreen(screen, RESOLUTION, Error=None):
     #Get a list of all .zzt files
     games = glob.glob("*.[Zz][Zz][Tt]")
     saves = glob.glob("*.[Ss][Aa][Vv]")
@@ -32,56 +32,73 @@ def titlescreen(screen, RESOLUTION):
     
     #Make sure there are 5 games in the array, repeating the data otherwise
     x = 0
-    while len(games) < 5:
-        games.append(games[x])
-        x += 1
+    if len(games) > 0:
+        while len(games) < 5:
+            games.append(games[x])
+            x += 1
+            
+        gamelist = [] #selected images for all games.
+        gamelistdesel = [] #deselected images for all games
         
-    gamelist = [] #selected images for all games.
-    gamelistdesel = [] #deselected images for all games
-    
-    for y in range(0, len(games)):#For every game in the list...
-        tempimg = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
-        tempimg.fill(bgdarkblue)
-        tempimg2 = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
-        tempimg2.fill(bgdarkblue)
-        for x in range(0, len(games[y])-4): #Then for every character of text in that list... (chopping off the .zzt)
-            tempchar = makeimage(int(binascii.hexlify(games[y][x]), 16), blue, bgdarkblue)
-            #Char is then produced properly...
-            tempimg.blit(tempchar, (x*8,0)) #Loop ends when image is finished
-        gamelistdesel.append(tempimg)
-        for x in range(0, len(games[y])-4): #Then for every character of text in that list... (chopping off the .zzt)
-            tempchar2 = makeimage(int(binascii.hexlify(games[y][x]), 16), cyan, bgdarkblue)
-            #Char is then produced properly...
-            tempimg2.blit(tempchar2, (x*8,0)) #Loop ends when image is finished
-        gamelist.append(tempimg2)
+        for y in range(0, len(games)):#For every game in the list...
+            tempimg = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
+            tempimg.fill(bgdarkblue)
+            tempimg2 = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
+            tempimg2.fill(bgdarkblue)
+            for x in range(0, len(games[y])-4): #Then for every character of text in that list... (chopping off the .zzt)
+                tempchar = makeimage(int(binascii.hexlify(games[y][x]), 16), blue, bgdarkblue)
+                #Char is then produced properly...
+                tempimg.blit(tempchar, (x*8,0)) #Loop ends when image is finished
+            gamelistdesel.append(tempimg)
+            for x in range(0, len(games[y])-4): #Then for every character of text in that list... (chopping off the .zzt)
+                tempchar2 = makeimage(int(binascii.hexlify(games[y][x]), 16), cyan, bgdarkblue)
+                #Char is then produced properly...
+                tempimg2.blit(tempchar2, (x*8,0)) #Loop ends when image is finished
+            gamelist.append(tempimg2)
+    else:
+        mode = "saves"
+        if len(saves) > 0:
+            Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              valid ZZT files!\n\n  ####    Because of this you may only\n  ####    load saves at this time.\n"
+            Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
+        else:
+            Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              games or saves!\n\n  ####    Please place any games in your\n  ####    Tyger folder. You can find new\n          ZZT and Tyger worlds at:\n\n$    http://zzt.belsambar.net \n"
+            Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
+            mode = None
+        drawboard(screen, board)
+        pygame.display.update()
     
     x = 0
-    while len(saves) < 5:
-        saves.append(saves[x])
-        x += 1
+    if len(saves) > 0:
+        while len(saves) < 5:
+            saves.append(saves[x])
+            x += 1
+            
+        savelist = [] #selected images for all games.
+        savelistdesel = [] #deselected images for all games
         
-    savelist = [] #selected images for all games.
-    savelistdesel = [] #deselected images for all games
-    
-    for y in range(0, len(saves)):#For every game in the list...
-        tempimg = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
-        tempimg.fill(bgdarkblue)
-        tempimg2 = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
-        tempimg2.fill(bgdarkblue)
-        for x in range(0, len(saves[y])-4): #Then for every character of text in that list... (chopping off the .sav)
-            tempchar = makeimage(int(binascii.hexlify(saves[y][x]), 16), gray, bgdarkblue)
-            #Char is then produced properly...
-            tempimg.blit(tempchar, (x*8,0)) #Loop ends when image is finished
-        savelistdesel.append(tempimg)
-        for x in range(0, len(saves[y])-4): #Then for every character of text in that list... (chopping off the .sav)
-            tempchar2 = makeimage(int(binascii.hexlify(saves[y][x]), 16), green, bgdarkblue)
-            #Char is then produced properly...
-            tempimg2.blit(tempchar2, (x*8,0)) #Loop ends when image is finished
-        savelist.append(tempimg2)
+        for y in range(0, len(saves)):#For every game in the list...
+            tempimg = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
+            tempimg.fill(bgdarkblue)
+            tempimg2 = pygame.Surface((64, 14)) #Create a surface that can contain 8 characters of text
+            tempimg2.fill(bgdarkblue)
+            for x in range(0, len(saves[y])-4): #Then for every character of text in that list... (chopping off the .sav)
+                tempchar = makeimage(int(binascii.hexlify(saves[y][x]), 16), gray, bgdarkblue)
+                #Char is then produced properly...
+                tempimg.blit(tempchar, (x*8,0)) #Loop ends when image is finished
+            savelistdesel.append(tempimg)
+            for x in range(0, len(saves[y])-4): #Then for every character of text in that list... (chopping off the .sav)
+                tempchar2 = makeimage(int(binascii.hexlify(saves[y][x]), 16), green, bgdarkblue)
+                #Char is then produced properly...
+                tempimg2.blit(tempchar2, (x*8,0)) #Loop ends when image is finished
+            savelist.append(tempimg2)
         
     #Now we can draw the 5 games to the screen.
     center = 0
-    drawgames(center, screen, gamelist, gamelistdesel)
+    if mode != None:
+        if mode == "games":
+            drawgames(center, screen, gamelist, gamelistdesel)
+        elif mode == "saves":
+            drawgames(center, screen, savelist, savelistdesel)
     
     #Now we get input!
     while 1:
@@ -103,20 +120,20 @@ def titlescreen(screen, RESOLUTION):
                     center = 0
             if event.key == K_RETURN: #Play game/save
                 break
-            if event.key == K_r: #Load a save
+            if event.key == K_r and len(saves) > 0: #Load a save
                 mode = "saves"
                 center = 0
             if event.key == K_w: #Load a world
                 mode = "games"
             if mode == "games":
                 drawgames(center, screen, gamelist, gamelistdesel)
-            else:
+            elif mode == "saves":
                 drawsaves(center, screen, savelist, savelistdesel)
             
     #Play the game selected
     if mode == "games":
         return str(games[center])
-    else:
+    elif mode == "saves":
         return str(saves[center])
             
 def drawgames(center, screen, gamelist, gamelistdesel):

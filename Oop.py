@@ -2,16 +2,135 @@ from Dictionaries import *
 import pygame
 import Tyger
 import Elements
+import audiere
 from pygame.locals import *
 from sys import exit
 
 global TextMessage
 TextMessage = None
 
-def Become(command, board, x, y):
-    Elements.DestroyStat(board, x, y) #Destroy the old stat
-    element = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0) #TEMPORARILY MAKE #BECOME JUST #DIE
-    return element
+def Become(command, board, x, y, current):
+    # #become white blue player
+    fg = "red"
+    bg = "darkred"
+    thing = "ERROR"
+    done = False
+    custom = False
+    
+    #print command, "is command"
+    board.room[x][y].line = board.room[x][y].line + len(current) #Manually move oop forward
+    #Figure out what the specific properties are for our element
+    try: #This statement applies for #become ELEMENT
+        fg = ValidColorDict[command[0]]
+    except KeyError:
+        fg = "default"
+        bg = "default"
+        #print command[0], " IS COMMAND"
+        thing = command[0]
+        done = True
+        
+    if not done:
+        try: #This statement applies for #become COLOR ELEMENT
+            bg = ValidColorDict[command[1]]
+        except KeyError:
+            bg = "default"
+            #print command[0], " IS COMMAND"
+            thing = command[1]
+            done = True
+            
+    if not done:
+        try: #This statement applies for #become COLOR COLOR ELEMENT
+            ValidElementDict[command[2]]
+            thing = command[2]
+        except KeyError:
+            #print command[0], " IS COMMAND"
+            thing = "ScanboardAAAAAA"
+    
+    #This statement applies for #become and is zzt's default behavior of making a board edge.
+    if thing == "":
+        thing = "edge"
+        
+    #And this verifies element validity
+    try:
+        ValidElementDict[thing]
+    except KeyError:
+        
+        print "INVALID THING! HOORAY"
+        print "Looking for", command[-1]
+        #Scan the board for an object with the name you're looking for
+        for stat in board.statcoords:
+            if board.room[stat[0]][stat[1]].name == "object": #Is it an object?
+                if board.room[stat[0]][stat[1]].oop != None: #Check that the object has oop
+                    code = board.room[stat[0]][stat[1]].oop.lower() #Read its name if it has one
+                    code = code.split("\n")[0]
+                    #print code
+                    if code[1:] == command[-1]: #This is our object.
+                        print "Match found!"
+                        custom = True
+                        CElement = board.room[stat[0]][stat[1]]
+                        break
+        if thing == "ScanboardAAAAAA" and custom == False:
+            thing = "edge"
+        #thing = "solid"
+    
+    print "I want to #become...", fg, bg, thing
+    
+    #Case sensitivity!
+    fg = fg.lower()
+    bg = bg.lower()
+    thing = thing.lower()
+    
+    #Figure out proper coloring
+    FGColors = {"blue":Tyger.blue, "green":Tyger.green, "cyan":Tyger.cyan, "red":Tyger.red, "purple":Tyger.purple, "yellow":Tyger.yellow, "white":Tyger.white, "dblue":Tyger.darkblue, "dgreen":Tyger.darkgreen, "dcyan":Tyger.darkcyan, "dred":Tyger.darkred, "dpurple":Tyger.darkpurple, "dyellow":Tyger.darkyellow, "gray":Tyger.gray, "dgray":Tyger.darkgray, "black":Tyger.black, "any":board.room[x][y].foreground}
+    try:
+        FGImage = FGColors[fg]
+    except KeyError:
+        if fg == "default":
+            DefFGColorDict = {"empty":Tyger.black, "edge":Tyger.black, "messenger":Tyger.yellow, "monitor":Tyger.gray, "player":Tyger.white, "ammo":Tyger.darkcyan, "torch":Tyger.darkyellow, "gem":board.room[x][y].foreground, "key":board.room[x][y].foreground, "door":Tyger.white, "scroll":Tyger.white, "passage":Tyger.white, "duplicator":Tyger.white, "bomb":board.room[x][y].foreground, "energizer":Tyger.darkpurple, "star":Tyger.green, "clockwise":board.room[x][y].foreground, "counter":board.room[x][y].foreground, "bullet":Tyger.white, "water":board.room[x][y].foreground, "forest":Tyger.black, "solid":board.room[x][y].foreground, "normal":board.room[x][y].foreground, "breakable":board.room[x][y].foreground, "boulder":board.room[x][y].foreground, "sliderns":board.room[x][y].foreground, "sliderew":board.room[x][y].foreground, "fake":board.room[x][y].foreground, "invisible":board.room[x][y].foreground, "blinkwall":board.room[x][y].foreground, "transporter":board.room[x][y].foreground, "line":board.room[x][y].foreground, "ricochet":Tyger.green, "horizray":board.room[x][y].foreground, "bear":Tyger.darkyellow, "ruffian":Tyger.purple, "object":board.room[x][y].foreground, "slime":board.room[x][y].foreground, "shark":Tyger.gray, "spinninggun":board.room[x][y].foreground, "pusher":board.room[x][y].foreground, "lion":Tyger.red, "tiger":Tyger.cyan, "vertray":board.room[x][y].foreground, "head":board.room[x][y].foreground, "segment":board.room[x][y].foreground, "element46":board.room[x][y].foreground, "bluetext":Tyger.white, "greentext":Tyger.white, "cyantext":Tyger.white, "redtext":Tyger.white, "purpletext":Tyger.white, "yellowtext":Tyger.white, "whitetext":Tyger.white}
+            print "Default FG"
+            try:
+                FGImage = DefFGColorDict[thing]
+            except KeyError:
+                FGImage = board.room[x][y].foreground
+        else:
+            FGImage = Tyger.red
+    
+    BGColors = {"blue":Tyger.bgblue, "green":Tyger.bggreen, "cyan":Tyger.bgcyan, "red":Tyger.bgred, "purple":Tyger.bgpurple, "yellow":Tyger.bgyellow, "white":Tyger.bgwhite, "dblue":Tyger.bgdarkblue, "dgreen":Tyger.bgdarkgreen, "dcyan":Tyger.bgdarkcyan, "dred":Tyger.bgdarkred, "dpurple":Tyger.bgdarkpurple, "dyellow":Tyger.bgdarkyellow, "gray":Tyger.bggray, "dgray":Tyger.bgdarkgray, "black":Tyger.bgblack, "any":board.room[x][y].background}
+    try:
+        BGImage = BGColors[bg]
+    except KeyError:
+        if bg == "default":
+            #REMEMBER TO FIX DOORS AND PASSAGES AT SOME POINT!
+            DefBGColorDict = {"empty":Tyger.bggray, "edge":board.room[x][y].background, "messenger":Tyger.bgred, "monitor":Tyger.bgblack, "player":Tyger.bgdarkblue, "ammo":Tyger.bgblack, "torch":Tyger.bgblack, "gem":board.room[x][y].background, "key":board.room[x][y].background, "door":board.room[x][y].background, "scroll":Tyger.bgblack, "passage":board.room[x][y].background, "duplicator":Tyger.bgblack, "bomb":board.room[x][y].background, "energizer":Tyger.bgblack, "star":Tyger.bgblack, "clockwise":board.room[x][y].background, "counter":board.room[x][y].background, "bullet":board.room[x][y].background, "water":board.room[x][y].background, "forest":Tyger.bgdarkgreen, "solid":board.room[x][y].background, "normal":board.room[x][y].background, "breakable":board.room[x][y].background, "boulder":board.room[x][y].background, "sliderns":board.room[x][y].background, "sliderew":board.room[x][y].background, "fake":Tyger.bgblack, "invisible":board.room[x][y].background, "blinkwall":board.room[x][y].background, "transporter":board.room[x][y].background, "line":board.room[x][y].background, "ricochet":Tyger.bgblack, "horizray":board.room[x][y].background, "bear":Tyger.bgblack, "ruffian":Tyger.bgblack, "object":board.room[x][y].background, "slime":board.room[x][y].background, "shark":Tyger.bgblack, "spinninggun":board.room[x][y].background, "pusher":board.room[x][y].background, "lion":Tyger.bgblack, "tiger":Tyger.bgblack, "vertray":board.room[x][y].background, "head":board.room[x][y].background, "segment":board.room[x][y].background, "element46":board.room[x][y].background, "bluetext":Tyger.bgdarkblue, "greentext":Tyger.bgdarkgreen, "cyantext":Tyger.bgdarkcyan, "redtext":Tyger.bgdarkred, "purpletext":Tyger.bgdarkpurple, "yellowtext":Tyger.bgdarkyellow, "whitetext":Tyger.bggray}
+            print "Default BG"
+            try:
+                BGImage = DefBGColorDict[thing]
+            except KeyError:
+                BGImage = board.room[x][y].background
+        else:
+            print "Error, Color ", bg, "does not exist!"
+            BGImage = Tyger.bgdarkred
+    
+    
+    #Actually become the element
+    if custom == True:
+        element = Tyger.Spawn("object", CElement.character, FGImage, BGImage, (x, y), CElement.xstep, CElement.ystep, CElement.cycle, CElement.param1, CElement.param2, CElement.param3, CElement.follownum, CElement.leadnum, CElement.underID, CElement.underColor, 0, CElement.oopLength, CElement.oop)
+
+    elif thing == board.room[x][y].name: #Keep stats if it's becoming the same element
+        element = Tyger.Spawn(thing, board.room[x][y].character, FGImage, BGImage, (x, y), board.room[x][y].xstep, board.room[x][y].ystep, board.room[x][y].cycle, board.room[x][y].param1, board.room[x][y].param2, board.room[x][y].param3, board.room[x][y].follownum, board.room[x][y].leadnum, board.room[x][y].underID, board.room[x][y].underColor, board.room[x][y].line, board.room[x][y].oopLength, board.room[x][y].oop)    
+    
+    else:
+        print "#Becoming...", fg, bg, thing
+        Elements.DestroyStat(board, x, y) #Destroy the old stat
+        
+        #Find the cycle if needed
+        cycle = 0
+        if StatDict.has_key(thing) and custom == False:
+            cycle = StatDict[thing]
+        #                     Name   Character                     FGColor  BGColor  Coords  Xstep, Ystep Cycle Param1 Param2 Param3 Follownum Leadnum uID uColor line ooplength oop)
+        element = Tyger.Spawn(thing, CharDict[Name2IdDict[thing]], FGImage, BGImage, (x, y), 0,     0,    cycle,    0,     0,     0,     0,        0,      0,  0,     0,   0,        None)    
+    
+    return element, True
 
 def Char(character):
     try:
@@ -402,10 +521,28 @@ def MessageLine(message, screen, board, priority="High"): #WIP!!!!
         TextMessage = tempimg
     return
 
-def Restore(oop, current):
-    while oop.find("'" + current.split(" ")[1]) != -1:
-        oop = oop.replace("'" + current.split(" ")[1], ":" + current.split(" ")[1])
-    return oop
+def Restore(object, board, current):
+    try:
+        name = current.split(":")[0]
+        label = current.split(":")[1]
+        #Search the board for any objects that have that name
+        for position in board.statcoords: #Look at every stat on the screen
+            if position != "pop": #Check the stat isn't in limbo
+                if board.room[position[0]][position[1]].name == "object": #Check that you're looking at an object
+                    if board.room[position[0]][position[1]].oop != None: #Check that the object has oop
+                        code = board.room[position[0]][position[1]].oop.lower() #Read its name if it has one
+                        code = code.split("\n")[0]
+                        #print code
+                        if code[1:] == name or name == "all": #if the object and #send name match
+                            board.room[position[0]][position[1]].oop = board.room[position[0]][position[1]].oop.replace("\n'" + label, "\n:" + label)
+    except IndexError:
+        name = None
+        label = current
+        object.oop = object.oop.replace("\n'" + label, "\n:" + label)
+
+#    while oop.find("'" + current.split(" ")[1]) != -1:
+#        oop = oop.replace("'" + current.split(" ")[1], ":" + current.split(" ")[1])
+    return object, board
 
 def Send(current, board, object, x, y):
     #print "SEND COMMAND", current
@@ -616,7 +753,7 @@ def TextBox(message, name, screen):
         try:
             if rawline[0] == "$": #White and centered
                 offset = ((42-len(rawline)-1)/2)*8+(8*(len(rawline)%2 == 0))
-                print offset
+                #print offset
                 for x in range(1, len(rawline)): #Then for every character of text in that list...
                     tempchar = Tyger.makeimage(ord(rawline[x]), Tyger.white, Tyger.bgdarkblue) #Create the character
                     tempimg.blit(tempchar, ((x*8-8)+offset,0)) #Stamp it onto the surface for the line
@@ -660,7 +797,11 @@ def TextBox(message, name, screen):
     
     #---------------------------------------------------------------------------------------
     #Draw the Messagebox
-    screen.blit(messagebox, (40, 42))
+    if Tyger.options[2] == "True": #If we want double screen
+        double = pygame.transform.scale2x(messagebox)
+        screen.blit(double, (80,84))
+    else:
+        screen.blit(messagebox, (40, 42))
     pygame.display.update()
     
     #---------------------------------------------------------------------------------------
@@ -715,7 +856,14 @@ def TextBox(message, name, screen):
                 #print "Start:", start
                 messagebox.blit(lines[top+start], (32, 42+(start*14)))
                 
-            screen.blit(messagebox, (40, 42))
+            #
+            if Tyger.options[2] == "True": #If we want double screen
+                double = pygame.transform.scale(screen, (screen.get_width()*2, screen.get_height()*2))
+                screen.blit(double, (80,84))
+            else:
+                screen.blit(messagebox, (40, 42))
+            #
+            #screen.blit(messagebox, (40, 42))
             pygame.time.wait(100)
             pygame.display.update()
             #print "Screen drawn!"
