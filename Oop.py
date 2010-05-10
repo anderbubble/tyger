@@ -2,14 +2,14 @@ from Dictionaries import *
 import pygame
 import Tyger
 import Elements
-import audiere
+#import audiere
 from pygame.locals import *
 from sys import exit
 
 global TextMessage
 TextMessage = None
 
-def Become(command, board, x, y, current):
+def Become(command, board, x, y, current, AddStats = True, AdvanceLine = True):
     # #become white blue player
     fg = "red"
     bg = "darkred"
@@ -18,7 +18,8 @@ def Become(command, board, x, y, current):
     custom = False
     
     #print command, "is command"
-    board.room[x][y].line = board.room[x][y].line + len(current) #Manually move oop forward
+    if AdvanceLine:
+        board.room[x][y].line = board.room[x][y].line + len(current) #Manually move oop forward
     #Figure out what the specific properties are for our element
     try: #This statement applies for #become ELEMENT
         fg = ValidColorDict[command[0]]
@@ -101,8 +102,8 @@ def Become(command, board, x, y, current):
     except KeyError:
         if bg == "default":
             #REMEMBER TO FIX DOORS AND PASSAGES AT SOME POINT!
-            DefBGColorDict = {"empty":Tyger.bggray, "edge":board.room[x][y].background, "messenger":Tyger.bgred, "monitor":Tyger.bgblack, "player":Tyger.bgdarkblue, "ammo":Tyger.bgblack, "torch":Tyger.bgblack, "gem":board.room[x][y].background, "key":board.room[x][y].background, "door":board.room[x][y].background, "scroll":Tyger.bgblack, "passage":board.room[x][y].background, "duplicator":Tyger.bgblack, "bomb":board.room[x][y].background, "energizer":Tyger.bgblack, "star":Tyger.bgblack, "clockwise":board.room[x][y].background, "counter":board.room[x][y].background, "bullet":board.room[x][y].background, "water":board.room[x][y].background, "forest":Tyger.bgdarkgreen, "solid":board.room[x][y].background, "normal":board.room[x][y].background, "breakable":board.room[x][y].background, "boulder":board.room[x][y].background, "sliderns":board.room[x][y].background, "sliderew":board.room[x][y].background, "fake":Tyger.bgblack, "invisible":board.room[x][y].background, "blinkwall":board.room[x][y].background, "transporter":board.room[x][y].background, "line":board.room[x][y].background, "ricochet":Tyger.bgblack, "horizray":board.room[x][y].background, "bear":Tyger.bgblack, "ruffian":Tyger.bgblack, "object":board.room[x][y].background, "slime":board.room[x][y].background, "shark":Tyger.bgblack, "spinninggun":board.room[x][y].background, "pusher":board.room[x][y].background, "lion":Tyger.bgblack, "tiger":Tyger.bgblack, "vertray":board.room[x][y].background, "head":board.room[x][y].background, "segment":board.room[x][y].background, "element46":board.room[x][y].background, "bluetext":Tyger.bgdarkblue, "greentext":Tyger.bgdarkgreen, "cyantext":Tyger.bgdarkcyan, "redtext":Tyger.bgdarkred, "purpletext":Tyger.bgdarkpurple, "yellowtext":Tyger.bgdarkyellow, "whitetext":Tyger.bggray}
-            print "Default BG"
+            DefBGColorDict = {"empty":Tyger.bggray, "edge":board.room[x][y].background, "messenger":Tyger.bgred, "monitor":Tyger.bgblack, "player":Tyger.bgdarkblue, "ammo":Tyger.bgblack, "torch":Tyger.bgblack, "gem":board.room[x][y].background, "key":board.room[x][y].background, "door":board.room[x][y].background, "scroll":Tyger.bgblack, "passage":board.room[x][y].background, "duplicator":Tyger.bgblack, "bomb":board.room[x][y].background, "energizer":Tyger.bgblack, "star":Tyger.bgblack, "clockwise":board.room[x][y].background, "counter":board.room[x][y].background, "bullet":board.room[x][y].background, "water":board.room[x][y].background, "forest":Tyger.bgdarkgreen, "solid":Tyger.bgblack, "normal":Tyger.bgblack, "breakable":Tyger.bgblack, "boulder":board.room[x][y].background, "sliderns":board.room[x][y].background, "sliderew":board.room[x][y].background, "fake":Tyger.bgblack, "invisible":board.room[x][y].background, "blinkwall":board.room[x][y].background, "transporter":board.room[x][y].background, "line":board.room[x][y].background, "ricochet":Tyger.bgblack, "horizray":board.room[x][y].background, "bear":Tyger.bgblack, "ruffian":Tyger.bgblack, "object":board.room[x][y].background, "slime":board.room[x][y].background, "shark":Tyger.bgblack, "spinninggun":board.room[x][y].background, "pusher":board.room[x][y].background, "lion":Tyger.bgblack, "tiger":Tyger.bgblack, "vertray":board.room[x][y].background, "head":board.room[x][y].background, "segment":board.room[x][y].background, "element46":board.room[x][y].background, "bluetext":Tyger.bgdarkblue, "greentext":Tyger.bgdarkgreen, "cyantext":Tyger.bgdarkcyan, "redtext":Tyger.bgdarkred, "purpletext":Tyger.bgdarkpurple, "yellowtext":Tyger.bgdarkyellow, "whitetext":Tyger.bggray}
+            #print "Default BG"
             try:
                 BGImage = DefBGColorDict[thing]
             except KeyError:
@@ -115,23 +116,99 @@ def Become(command, board, x, y, current):
     #Actually become the element
     if custom == True:
         element = Tyger.Spawn("object", CElement.character, FGImage, BGImage, (x, y), CElement.xstep, CElement.ystep, CElement.cycle, CElement.param1, CElement.param2, CElement.param3, CElement.follownum, CElement.leadnum, CElement.underID, CElement.underColor, 0, CElement.oopLength, CElement.oop)
+        if AddStats:
+            board.statcoords.append((x, y)) #Add the new stat if needed
 
     elif thing == board.room[x][y].name: #Keep stats if it's becoming the same element
         element = Tyger.Spawn(thing, board.room[x][y].character, FGImage, BGImage, (x, y), board.room[x][y].xstep, board.room[x][y].ystep, board.room[x][y].cycle, board.room[x][y].param1, board.room[x][y].param2, board.room[x][y].param3, board.room[x][y].follownum, board.room[x][y].leadnum, board.room[x][y].underID, board.room[x][y].underColor, board.room[x][y].line, board.room[x][y].oopLength, board.room[x][y].oop)    
     
     else:
         print "#Becoming...", fg, bg, thing
+        #One last failsafe
+        if not Name2IdDict.has_key(thing):
+            return board.room[x][y], True
+        
+        #print "Old statcoords...", str(board.statcoords)
         Elements.DestroyStat(board, x, y) #Destroy the old stat
+        #print "New statcoords...", str(board.statcoords)
         
         #Find the cycle if needed
         cycle = 0
         if StatDict.has_key(thing) and custom == False:
             cycle = StatDict[thing]
+            if AddStats:
+                board.statcoords.append((x, y)) #Add the new stat if needed
         #                     Name   Character                     FGColor  BGColor  Coords  Xstep, Ystep Cycle Param1 Param2 Param3 Follownum Leadnum uID uColor line ooplength oop)
         element = Tyger.Spawn(thing, CharDict[Name2IdDict[thing]], FGImage, BGImage, (x, y), 0,     0,    cycle,    0,     0,     0,     0,        0,      0,  0,     0,   0,        None)    
     
     return element, True
 
+def Change(command, board, x, y, current):
+    #Find the first thing in the command that's not a color.
+    splitloc = 1 #Location to split at
+    while True:
+        try:
+            ValidColorDict[current.split(" ")[splitloc]]
+            splitloc = splitloc + 1
+        except KeyError:
+            break
+    #NewElement, junk = Become(current.split(" ")[splitloc+1:], board, x, y, current, False) #Don't add a stat just yet
+    #board.room[5][5] = NewElement
+    
+    #Find out the requirements for replacement
+    source = current.split(" ")[1:splitloc+1]
+    goal   = current.split(" ")[splitloc+1:]
+    
+    #Figure out the rules of the source element
+    if len(source) == 3:
+        fg1 = source[0]
+        bg1 = source[1]
+        thing1 = source[2]
+    elif len(source) == 2:
+        fg1 = source[0]
+        bg1 = "any"
+        thing1 = source[1]
+    else:
+        fg1 = "any"
+        bg1 = "any"
+        thing1 = source[0]
+        
+    #Figure out the rules of the goal element
+    if len(goal) == 3:
+        fg2 = goal[0]
+        bg2 = goal[1]
+        thing2 = goal[2]
+    elif len(goal) == 2:
+        fg2 = goal[0]
+        bg2 = "def"
+        thing2 = goal[1]
+    else:
+        fg2 = "def"
+        bg2 = "def"
+        thing2 = goal[0]
+    
+    print source, " is the source"
+    print goal, " is the goal"
+    print "I'm looking to replace:", fg1, bg1, thing1, "with a", fg2, bg2, thing2 #Thing 1 and Thing 2. This is getting Seussian.
+    
+    #Now we loop through the board to find what needs to be #changed.
+    for x in xrange(0,25):
+        for y in xrange(0,60):
+            #print "Lol"
+            #if (board.room[x][y].name == thing1) and ((board.room[x][y].foregroundcolor == fg1) or (fg1 == "any")) and ((board.room[x][y].backgroundcolor == bg1) or (bg1 == "any")):#They are the same thing
+            if (board.room[x][y].name == thing1) and ((board.room[x][y].foregroundcolor == fg1) or ( (fg1 == "any") or (fg1 == "def") )) and ((board.room[x][y].backgroundcolor == bg1) or ( (bg1 == "any") or (bg1 == "def") )):
+                
+                #Replace that element!
+                if board.statcoords[0] != (x, y):
+                    board.room[x][y], junk = Become([fg2, bg2, thing2], board, x, y, "Garbage")
+                    #print "Replaced!"
+                else:
+                    board.room[x][y], junk = Become([fg2, bg2, thing2], board, x, y, "Garbage")
+                    board.statcoords.insert(0, (x, y))
+                    #print "Replaced critically!"
+                
+    
+    
 def Char(character):
     try:
         character = int(character)
@@ -143,12 +220,12 @@ def Char(character):
     return character
 
 def Clear(flag, flags):
-    #print "Clearing"
+    print "Clearing", flag
     #print "Before... " + str(flags)
     for x in range(0, len(flags)-1): #Find the flag if it exists
         if flag == flags[x]:
             flags.pop(x)
-    #print str(flags)
+    #print "After " + str(flags)
     return flags
     
 def CopyCode(board, name, object):
@@ -243,7 +320,7 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
             object.line = object.line + 1
         #print "Idling line:", object.line, "Moved:", moved
         #print object.oop[object.line:object.line+15]
-        print "IDLED."
+        #print "IDLED due to a movement command NOW at line:", object.line
         progress = 100
         
         return NoAdvance, Moved, progress
@@ -281,7 +358,7 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
         #break
     else: #If you can't walk here
         #print "Try something will ya"
-        if current.split(" ")[0] == "#try":
+        if current.split(" ")[0] == "#try" or current[0] == "?":
             try:
                 #print str(IsDirDict[current.split(" ")[-1]])
                 #print "It is a direction"
@@ -289,6 +366,7 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
             except KeyError:
                 #print "It is not a direction..." + (":" + current.split(" ")[-1])
                 #You want to jump to this label.
+                print "Uh oh"
                 Oop.SendJump(object, ":" + current.split(" ")[-1])
                 progress = 100
                 Moved = False
@@ -355,16 +433,42 @@ def If(current, object, x, y, board, ecycles, flags):
             #next = Tyger.string.join(statement, " ") #Assemble the true command
             #print "Results are... ", next
     elif statement[0] == "any": #Not smart enough to understand color
+        fg = None
+        bg = None
+        thing = None
+        
+        statement.pop(0) #Remove the any
+        if ValidColorDict.has_key(statement[0]): #Check for foreground color
+            fg = statement[0]
+            statement.pop(0) #Remove the foreground color
+            if ValidColorDict.has_key(statement[0]): #Check for background color
+                bg = statement[0]
+                statement.pop(0)
+                thing = statement[0]
+                statement.pop(0)
+            else:
+                thing = statement[0]
+                statement.pop(0)
+        else:
+            thing = statement[0]
+            statement.pop(0)
+            
+        #print "Is there any...", fg, bg, thing
+            
+        #if ValidColorDict.has_key(piece) or ValidElementDict.has_key(piece):
+        
+        #print statement, "length:", len(statement)
+        
         for col in xrange(0,25):
             for row in xrange(0,60):
-                if board.room[col][row].name == statement[1]:
-                    #print "Found " + statement[1]
+                if (board.room[col][row].name == thing) and ((board.room[col][row].foregroundcolor == fg) or (fg == None)) and ((board.room[col][row].backgroundcolor == bg) or (bg == None)):
+                    print "Found ", fg, bg, thing
                     result = True
                     break
             if result == True:
                 break
-        statement.pop(0) #Remove the any
-        statement.pop(0) #Remove the item you searched
+        
+        #statement.pop(0) #Remove the item you searched
     
     elif statement[0] == "blocked":
         #condition = "blocked"
@@ -429,7 +533,7 @@ def If(current, object, x, y, board, ecycles, flags):
     
     #Remove any THEN's/
     if statement[0] == "then":
-        print "--------------------------------POPPING A THEN!"
+        print "--------------------------------POPPING A THEN! in", board.room[x][y].oop[0:15]
         statement.pop(0)
     
     #Flip a NOT prefix
@@ -462,6 +566,8 @@ def Message(object, screen, board):
     Multiline = True    #I assume you have a textbox by default, not a flashing bottom of the screen message
     
     raw = object.oop[object.line:].split("\n")  #Get the raw code to find the message in
+    #print "Processing message..."
+    #print raw
     
     #Find the correct end of the message
     for x in xrange(0,len(raw)):
@@ -519,6 +625,49 @@ def MessageLine(message, screen, board, priority="High"): #WIP!!!!
         board.statcoords.append((-1, -1))
         global TextMessage
         TextMessage = tempimg
+    return
+    
+def Put(board, current, x, y):
+    #Figure out the direction and the element
+    oldline = board.room[x][y].line
+    print "OLDLINE IS...", oldline
+    raw = current.split(" ")[1:]
+    breakpoint = 0
+    for piece in raw:
+        if ValidColorDict.has_key(piece) or ValidElementDict.has_key(piece):
+            break
+        breakpoint += 1
+    
+    print "Breakpoint", breakpoint
+    direction = raw[0:breakpoint]
+    thing = raw[breakpoint:]
+    print direction
+    print thing
+
+    dir = Elements.ParseDir(direction, x, y, board.statcoords[0][0], board.statcoords[0][1], 0, 0)
+    
+    print dir
+    print "LINE AFTER PARSEDIR...", board.room[x][y].line
+    #---------
+    if ((x+(dir == "s")-(dir == "n")) < 0) or ((y+(dir == "e")-(dir == "w")) < 0) or ((x+(dir == "s")-(dir == "n")) > 24) or ((y+(dir == "e")-(dir == "w")) > 59): #Border checking
+        return
+        
+    elif (x+(dir == "s")-(dir == "n") , y+(dir == "e")-(dir == "w")) == board.statcoords[0]:
+        playerloc = board.statcoords[0] #Store the player's coords to prevent an error
+        if thing[-1] == "fake":
+            board.roomunder[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")], junk = Become(thing, board, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"), "garbage", True, False)
+            board.statcoords[0] = playerloc #Restore the player's coords
+        return
+    else:
+        Elements.DestroyStat(board, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w")) #Destroy the old stat
+        board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")], junk = Become(thing, board, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"), "garbage", True, False) #Produce the new element
+        print "NOW LINE IS", board.room[x][y].line
+        return
+        #board.roomunder[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] #Put the fake on the under layer
+        #board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = object #Move the object
+        #board.room[x][y] = board.roomunder[x][y] #Destroy the old object and update its stat
+        #Elements.UpdateStat(board, x, y, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"))
+
     return
 
 def Restore(object, board, current):
@@ -592,6 +741,7 @@ def Set(flag, flags):
         if flag == flags[x]:
             return flags #Don't add a duplicate flag
     flags.append(flag.upper()) #Add the flag if it didn't exist before
+    print flags
     return flags
     
 def Shoot(current, x, y, board, object, health):
@@ -668,7 +818,7 @@ def Take(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys,
     print "Take failed!"
     return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys
   
-def TextBox(message, name, screen):
+def TextBox(message, name, screen, special=False):
     messagebox = pygame.Surface((392, 266)) #Create the empty surface
     messagebox.fill(Tyger.bgdarkblue)
     
@@ -803,6 +953,11 @@ def TextBox(message, name, screen):
     else:
         screen.blit(messagebox, (40, 42))
     pygame.display.update()
+    
+    #---------------------------------------------------------------------------------------
+    #Check for special cases (saves, cheats)
+    if special == True:
+        return None
     
     #---------------------------------------------------------------------------------------
     #Player input in window

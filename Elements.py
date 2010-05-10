@@ -466,9 +466,14 @@ def ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, scor
     return ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y, screen):
-    cheat = raw_input("?")
+    #cheat = raw_input("?")
+    cheat = Tyger.TypedInput("$Input your cheat: \n!;\n", "@Cheat!", screen)
     cheat = cheat.lower()
     
+    #Did you even type anything?
+    if cheat == "":
+        return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, "null", board
+        
     if cheat == "ammo":
         ammo = ammo + 5
     elif cheat == "torches":
@@ -678,9 +683,9 @@ def DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, 
     if board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].name == "door":
         slot = DoorDict[board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].backgroundcolor]
         if keys[slot] == 0:
-            print "The door is locked!"
+            Oop.MessageLine("The " + KeyIndexDict[slot] + " door is locked!", screen, board, "Low")
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
-        keys[slot] = 0
+        keys[slot] = keys[slot-1]
         print "Door opened!"
     
     #Pretend to be an empty so the player can walk on you
@@ -901,6 +906,7 @@ def Monitor(board, x, y, input, position, cycles, ammo, torches, health, flags, 
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen):
+    #print "I am being called on"
     object = board.room[x][y]
     progress = 0
     Moved = True
@@ -908,7 +914,6 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #IfCmd = False
     #Retry = False
     #print str(object.line)
-    
     while progress < 33: #Only 33 non-cycle ending commands can be executed at once.
         #print "In the loop"
         progress = progress + 1
@@ -917,6 +922,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             #print "Early break"
             break
         
+        #print "Executing line...", object.line, object.oop[object.line:object.line+25]
         #print object.oop[object.line:]
         current = object.oop[object.line:].split("\n")[0]
         while current == "":
@@ -942,7 +948,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             current = "_" + current[1:] #Replace space with an underscore for now!
         #print current + " " + str(object.line) + "           -Current command/line"
         if current == "\n" or current == "\r":
-            print "NEWLINE"
+            #print "NEWLINE"
             current = "A NEWLINE"
         #Interpret any possible command:
         #print "++++", current + "=-=-=-="
@@ -952,11 +958,11 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#bind": #
             #print "A long body or tentacles are used to bind and squeeze the foe for two to five turns. It's super effective!\r"
             object = Oop.CopyCode(board, current.split(" ")[1], object)
-            print "Ok I'm at...", object.line
+            #print "Ok I'm at...", object.line
             continue #Maybe?
             #progress = 100
         elif current.split(" ")[0] == "#change": #Continues
-            print "THAT'S NOT #CHANGE WE CAN BELIEVE IN\r"
+            Oop.Change(current.split(" ")[1:], board, x, y, current)
         elif current.split(" ")[0] == "#char": #Continues
             object.param1 = Oop.Char(current.split(" ")[1])
         elif current.split(" ")[0] == "#clear": #Continues
@@ -974,6 +980,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#give": #Continues
             ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, NoAdvance = Oop.Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current, board, NoAdvance)
         elif current.split(" ")[0] == "#go" or current.split(" ")[0] == "#try" or current.split(" ")[0][0] == "/" or current.split(" ")[0][0] == "?": #Ends
+            #print "Calling on a go!"
             NoAdvance, Moved, progress = Oop.Go(current, x, y, board, object, NoAdvance, Moved, progress)
         elif current.split(" ")[0] == "#if": #Continues
             NoAdvance, Moved, object = Oop.If(current, object, x, y, board, ecycles, flags)
@@ -984,7 +991,11 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#play": #Continues
             print "I got my problems, and my problems they got me...\r"
         elif current.split(" ")[0] == "#put": #Continues
-            print "POOT SENTRY HERE\r"
+            #Oop.TextBox("Line pre #put" + str(object.line) + "\n", "-= Tyger Debug Info =-", screen)
+            Oop.Put(board, current, x, y)
+            #Oop.TextBox("Line post #put" + str(object.line) + "\n", "-= Tyger Debug Info =-", screen)
+            #print NoAdvance, "is NOADVANCE!"
+            #NoAdvance = False
         elif current.split(" ")[0] == "#restart": #Continues
             object.line = 0
             continue
@@ -1007,6 +1018,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         elif current.split(" ")[0] == "#send" or current.split(" ")[0][0] == "#":
             NoAdvance = Oop.Send(current, board, object, x, y)
         else: #Message Continues
+            #print "WE HAVE A MESSAGE HERE!!!!"
             try:
                 if current.split(" ")[0][0] != "#" and current.split(" ")[0][0] != "/" and current.split(" ")[0][0] != "?" and current.split(" ")[0][0] != "@" and current.split(" ")[0][0] != ":" and current.split(" ")[0][0] != "'":
                     NoAdvance, object = Oop.Message(object, screen, board)
@@ -1023,6 +1035,12 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         if object.line != -1 and Moved == True and NoAdvance == False:
             #print "Advancing code"
             object.line = object.line + len(current) + 1
+        """else:
+            print "Didn't advance code automatically because..."
+            if Moved == False:
+                print "Moved is false!"
+            if NoAdvance == True:
+                print "NoAdvance is True!" """
         #print "Line is... " + str(object.line)
         #print str(object.oop[object.line + 1])
         if object.line >= object.oopLength:
@@ -1056,6 +1074,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         else:
             Oop.SendJump(object, ":thud")
     #print "Returning!"
+    #print "---------------------------------DONE!"
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 
@@ -1151,16 +1170,18 @@ def Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, h
     #Find the board we're to travel to and the important passage color
     destination = board.room[targetA][targetB].param3
     color = board.room[targetA][targetB].background
+    fg = board.room[targetA][targetB].foregroundcolor
     
     #Is there a passage on this board with a matching background of the one we entered?
     passage = False
     for temp in range(0, len(allboards[destination].statcoords)):
         target = allboards[destination].statcoords[temp]
-        if allboards[destination].room[target[0]][target[1]].name == "passage" and allboards[destination].room[target[0]][target[1]].background == color:
+        if allboards[destination].room[target[0]][target[1]].name == "passage" and allboards[destination].room[target[0]][target[1]].background == color and allboards[destination].room[target[0]][target[1]].foregroundcolor == fg:
             passage = True
             break
             
     if passage == False: #There's no passage on the destination board that meets our requirements
+        print "Placing player where he currently is on that board."
         target = allboards[destination].statcoords[0] #We'll have to place you where the player is standing instead    
     #Destroy the destination board's current player location. This is probably the worst line of code ever and yet I have to use it again.
     allboards[destination].room[allboards[destination].statcoords[0][0]][allboards[destination].statcoords[0][1]] = UnderOver(allboards[destination].room[allboards[destination].statcoords[0][0]][allboards[destination].statcoords[0][1]].underID, allboards[destination].room[allboards[destination].statcoords[0][0]][allboards[destination].statcoords[0][1]].underColor, allboards[destination].statcoords[0])
@@ -1235,6 +1256,11 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                     bullet = Tyger.Spawn("bullet", 248, Tyger.white, board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")].background, tile.coords, ((input=="shootright") - (input=="shootleft")), ((input=="shootdown") - (input=="shootup")), 1, 0, 0, 0)
                 elif tile.name == "object" and Tyger.options[4] == "True": #Point blank shooting option
                     Oop.SendJump(board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")], ":shot") #Send the object to the label
+                    ammo = ammo - 1
+                    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+                elif tile.name == "breakable": #Breakable walls can be shot at point blank
+                    board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")] = board.roomunder[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")]
+                    DestroyStat(board, x-(input == "shootup")+(input == "shootdown"), y-(input == "shootleft")+(input == "shootright"))
                     ammo = ammo - 1
                     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
                 else: #Otherwise we can't spawn a bullet

@@ -96,9 +96,9 @@ def titlescreen(screen, RESOLUTION, Error=None):
     center = 0
     if mode != None:
         if mode == "games":
-            drawgames(center, screen, gamelist, gamelistdesel)
+            drawgames(center, screen, gamelist, gamelistdesel, games)
         elif mode == "saves":
-            drawgames(center, screen, savelist, savelistdesel)
+            drawgames(center, screen, savelist, savelistdesel, saves)
     
     #Now we get input!
     while 1:
@@ -126,9 +126,9 @@ def titlescreen(screen, RESOLUTION, Error=None):
             if event.key == K_w: #Load a world
                 mode = "games"
             if mode == "games":
-                drawgames(center, screen, gamelist, gamelistdesel)
+                drawgames(center, screen, gamelist, gamelistdesel, games)
             elif mode == "saves":
-                drawsaves(center, screen, savelist, savelistdesel)
+                drawsaves(center, screen, savelist, savelistdesel, saves)
             
     #Play the game selected
     if mode == "games":
@@ -136,7 +136,7 @@ def titlescreen(screen, RESOLUTION, Error=None):
     elif mode == "saves":
         return str(saves[center])
             
-def drawgames(center, screen, gamelist, gamelistdesel):
+def drawgames(center, screen, gamelist, gamelistdesel, games):
     
     #Just draw the center game
     screen.blit(gamelist[center], (208,168))
@@ -163,12 +163,20 @@ def drawgames(center, screen, gamelist, gamelistdesel):
             screen.blit(gamelistdesel[0], (208,196))
         else:
             screen.blit(gamelistdesel[center+2], (208,196))
-            
-            
+
+    #Game name
+    tempimg = pygame.Surface((8*42, 14)) #Create a surface for the title
+    tempimg.fill(Tyger.bgdarkblue)
+    screen.blit(tempimg, (72, 210))
+    image, coords = GameName(games, center)
+    screen.blit(image, coords)
+    
+    
+    
     #THIS TOOK LIKE TWO HOURS MY GOD.
     pygame.display.update()
     
-def drawsaves(center, screen, savelist, savelistdesel):
+def drawsaves(center, screen, savelist, savelistdesel, saves):
     
     #Just draw the center save
     print "Center is: " + str(center)
@@ -197,7 +205,63 @@ def drawsaves(center, screen, savelist, savelistdesel):
         else:
             screen.blit(savelistdesel[center+2], (208,196))
             
-            
+    #Game Names
+    tempimg = pygame.Surface((8*42, 14)) #Create a surface for the title
+    tempimg.fill(Tyger.bgdarkblue)
+    screen.blit(tempimg, (72, 210))
+    image, coords = GameName(saves, center)
+    screen.blit(image, coords)
+    
     #THIS TOOK LIKE TWO HOURS MY GOD.
     pygame.display.update()
+  
+def GameName(games, center):
+    #Default Games
+    GameDict = {"TOWN":("1f", "Town of ZZT"), "CITY":("5e", "Underground City of ZZT"), "CAVES":("08", "The Caves of ZZT"), "DUNGEONS":("1f", "The Dungeons of ZZT"), "DEMO":("5f", "Demo of the ZZT World Editor"), "TOUR":("cf", "Guided Tour of ZZT's Other Worlds"), "PHYSICS":("0a", "The Physics Behind ZZT")}
+
+    #Game Name
+    game = open(games[center], "r")
+    game.seek(261)
+    #game.seek(261)
+    #print "ABC", game.read(50)
+    color = hex(ord(game.read(1)))[2:]
+    if len(color) == 1:
+        color = color + "0"
+    length = game.read(1)
+    if length == "":
+        length = 0
+    game.read(1)
+    name = game.read(ord(length))
+    game.close()
+    #print color, ord(length), name
+
+    #print "Name", name
+    #print "Color", color
+    #print "Length", ord(length)
+    if (name == "") or (color == "00") or (ord(length)== 0) or (ord(length) > 42):
+        #print games[center][:-4]
+        if GameDict.has_key(games[center][:-4]):
+            color, name = GameDict[games[center][:-4]]
+        else:
+            tempimg = pygame.Surface((8*42, 14)) #Create a surface for the title
+            tempimg.fill(Tyger.bgdarkblue)
+            return tempimg, (72, 210)
+        
+    #print name, int(color), int(length)
     
+    tempimg = pygame.Surface((8*len(name), 14)) #Create a surface for the title
+    tempimg.fill(Tyger.bgdarkblue)    
+    
+    for x in range(0, len(name)): #Then for every character of text in that list... (chopping off the .zzt)
+        tempchar = Tyger.makeimage(ord(name[x]), Tyger.getFg(color), Tyger.getBg(color)) #Create the character
+        tempimg.blit(tempchar, (x*8,0)) #Stamp it onto the surface for the line
+    
+    #Proper Centering
+    coord = 72 + (4*(42-len(name)))
+    offset = (42 - len(name)) / 2
+    if (offset % 2) != 0:
+        coord = coord + 4
+    #print offset, "OFFSET"
+    
+        
+    return tempimg, (coord, 210)
