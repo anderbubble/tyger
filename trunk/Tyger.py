@@ -85,23 +85,7 @@ else:
 digits = pygame.image.load("gfx/digitsmin.png")     #Digits for HUD
 keyimg = pygame.image.load("gfx/keysmin.png")       #Keys for HUD
 
-
-global blue
-global green
-global cyan
-global red
-global purple
-global yellow
-global white
-global black
-global gray
-global darkblue
-global darkgreen
-global darkcyan
-global darkred
-global darkpurple
-global darkyellow
-global darkgray
+#Standard Colors
 blue            = pygame.image.load(paldir + "blue.png")
 green           = pygame.image.load(paldir + "green.png")
 cyan            = pygame.image.load(paldir + "cyan.png")
@@ -122,22 +106,7 @@ darkgray        = pygame.image.load(paldir + "darkgray.png")
 
 
 #Define background colors
-global bgblue
-global bggreen
-global bgcyan
-global bgred
-global bgpurple
-global bgyellow
-global bgwhite
-global bgblack
-global bggray
-global bgdarkblue
-global bgdarkgreen
-global bgdarkcyan
-global bgdarkred
-global bgdarkpurple
-global bgdarkyellow
-global bgdarkgray
+
 
 if paldir == "gfx/":
     #                  R    G    B    a   
@@ -246,6 +215,9 @@ def main():
     cycles = 0
     input = "null" 
 
+    #Set up quicksave name
+    savename = world.gamename
+    
     #Screenshots and Screenrecords
     games = glob.glob("screenshots\\" + world.gamename + "*.png")
     scrnum = len(games)  #Screenshot number
@@ -282,11 +254,19 @@ def main():
                     imageUnload(board)
                     board = allboards[currentboard]
                     print str(board)
+                if event.key == K_F3: #Save and continue
+                    savename = Tyger.TypedInput("$Saved Game Name: \n!;\n", "@Saving...", screen)
+                    savename = savename.lower()
+                    SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
                 if event.key == K_F5: #Take screenshot
                     screenshot = "screenshots/" + world.gamename + "-" + str(scrnum) + ".png"
                     pygame.image.save(screen, screenshot)
                     scrnum = scrnum + 1
                     Dprint("\nSaved screenshot as " + screenshot)
+                if event.key == K_F11: #Save and quit.
+                    SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
+                    print "Game saved..."
+                    #exit()
                 if event.key == K_F10: #Ragequit to world selection.
                     if hud != "min":
                         RESOLUTION = (640, 350)
@@ -416,7 +396,8 @@ class World(object):
         part2 = "\nHealth: " + str(self.health) + "\nStart #: " + str(self.startboard) + "\nTorches: " + str(self.torches) + "\nT Cycles: "  + str(self.tcycles)
         part3 = "\nE Cycles: " + str(self.ecycles) + "\nScore: " + str(self.score) + "\n" + ("-"*15) + "\nGame name: " + self.gamename + " (" + str(self.gamenamelength) + " characters)"
         part4 = "\nFlag: " + str(self.flag) + "\nTime passed: " + str(self.timepassed) + "\nSave: " + str(self.issave)
-        return part1+part2+part3+part4
+        part5 = "\nTyger Game color: " + str(self.gamecolor) + "\nGame Length: " + str(self.gamelength)
+        return part1+part2+part3+part4+part5
     
     def __init__(self, file):
         self.boards = read2(file)
@@ -451,7 +432,11 @@ class World(object):
         #Time
         self.timepassed = read2(file) #This is the time passed for a save on a timed board. this will = 12 when you have 8 seconds left on a 20 second timer
                                         #board time - time remaining = timepassed
-        read2(file) #Blank padding
+        
+        #Tyger specific Game Name
+        self.gamecolor = read(file) #Game's color for Tyger world selection
+        self.gamelength = read(file)
+        
         #Save byte
         self.issave = bool(read(file)) #Let's be fancy and use a boolean
  
@@ -477,16 +462,16 @@ class Element(object):
         #self.image = makeimage(self.character, self.foreground, self.background)
         
         #Stat data
-        self.xstep = ""
-        self.ystep = ""
+        self.xstep = 0
+        self.ystep = 0
         self.cycle = 3
         
         self.param1 = 0
         self.param2 = 0
         self.param3 = 0
         
-        self.follownum = ""
-        self.leadnum = ""
+        self.follownum = 0
+        self.leadnum = 0
         
         self.underID = 0
         self.underColor = 0
@@ -531,7 +516,8 @@ def makeimage(character, foreground, background): #Returns a surface
 def read(file):
     """Read one byte as an int"""
     try:
-        temp = int(binascii.hexlify(str(os.read(file, 1))), 16)
+        #temp = int(binascii.hexlify(str(os.read(file, 1))), 16)
+        temp = ord(os.read(file, 1))
         return temp
     except ValueError:
         return 0
@@ -572,7 +558,7 @@ def printarray(array):
 class Board(object):
     def __str__(self):
         part0 = "="*50 + " " + self.title + " " + "="*50
-        part1 = "\nRoom size: " + str(self.size) + "\nTitle: " + self.title
+        part1 = "\nRoom size: " + str(self.size) + "\nTitle: " + self.title + " " + str(self.number)
         part2 = "\n# of Shots:" + str(self.shots) + "\nDark: " + str(self.dark) + "\nBoards NSWE: " + str(self.boardnorth) + " " + str(self.boardsouth) + " " + str(self.boardwest) + " " + str(self.boardeast)
         part3 = "\nEnter when Zapped?: " + str(self.zap) + "\nMessage + Length: " + self.msg + " (" + str(self.msglength) + ") "
         part4 = "\nEnter X/Y: " + str(self.enterX) + "/" + str(self.enterY)
@@ -583,10 +569,13 @@ class Board(object):
         
         return (part0 + part1 + part2 + part3 + part4 + part5) + stat0 + stat1 + "\nPlayer bullets: " + str(self.playerbullets)
     
-    def __init__(self, file, start):
+    def __init__(self, file, start, number=0):
         #file.seek(start)
         os.lseek(file, start, 0)
         self.size = read2(file)
+        
+        #Store number
+        self.number = number
         
         #Create an empty array
         self.room = []
@@ -696,14 +685,15 @@ class Board(object):
             
             self.room[y-1][x-1].underID = read(file)
             self.room[y-1][x-1].underColor = read(file)
+            #print "AN UNDERCOLOR", self.room[y-1][x-1].underColor
             
             #If it's a player bullet make sure we increase it so we can compare to the limit
             if self.room[y-1][x-1].param1 == 0 and self.room[y-1][x-1].name == "bullet":
                 self.playerbullets = self.playerbullets + 1
             
-            #HEY WE MIGHT WANT TO ACTUALLY PUT THE UNDER INFORMATION ON THE BOARD
-            self.roomunder[y-1][x-1].underID = self.room[y-1][x-1].underID
-            self.roomunder[y-1][x-1].underColor = self.room[y-1][x-1].underColor
+            #DEBUG HEY WE MIGHT WANT TO ACTUALLY PUT THE UNDER INFORMATION ON THE BOARD
+            self.roomunder[y-1][x-1] = Spawn(IdDict[self.room[y-1][x-1].underID], CharDict[self.room[y-1][x-1].underID], red, bgdarkred, (y,x), 0, 0, 3, 0, 0, 0)
+            #self.roomunder[y-1][x-1].underColor = self.room[y-1][x-1].underColor
             
             sread(file, 4) #Pointer. No use for us here.
             
@@ -953,6 +943,8 @@ def drawboard(screen, board):
                 #print "WHAT THE"
                 #screen.blit(Oop.TextMessage, (232-((8*len(board.msg)/2)),336))
                 offset = (round(len(board.msg) / 2.) - 1) * 8 #Calculate offset to center text
+                if Oop.TextMessage == None:
+                    Oop.MessageLine(board.msg, screen, board, priority="High") #DEBUG MAYBE
                 screen.blit(Oop.TextMessage, ((240 - offset),336))
             
 def OopToArray(file, oopLength):
@@ -981,8 +973,11 @@ def getinfo(coords, board, screen):
     #Dprint(str(board.room[y][x]))
     else:
         message = str(board.room[y][x])
-        print str(board.room[y][x])
+        
+        print message
+        #cline = board.room[y][x].oop[board.room[y][x].line:board.room[y][x].line+10]
     Oop.TextBox(message, "-= Tyger Debug Info =-", screen)
+    
     #redraw!
     #board.room[y][x].character = board.room[col][row].param1
     #board.room[y][x].image = makeimage(board.room[col][row].param1, board.room[col][row].foreground, board.room[col][row].background)
@@ -1235,7 +1230,7 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     temp = read2(game)
     if temp != 65535 and temp != 12609:
         Dprint(str(temp) + "Invalid file")
-        #exit()
+        exit()
     else:
         Dprint("Valid ZZT file. Proceeding to load...")
     
@@ -1249,6 +1244,10 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     
     #Get world data
     world = World(game)
+    
+    #DEBUG DISPLAY WORLD
+    print str(world)
+    
     #Create counters
     ammo        = world.ammo
     torches     = world.torches
@@ -1271,7 +1270,7 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     boardstartpos       = 512
     #Loop this for every board (world.boards for total # of boards)
     for x in range(0, world.boards+1):
-        board = Board(game, boardstartpos)              #First board will always be at dec addr 512
+        board = Board(game, boardstartpos, x)              #First board will always be at dec addr 512
         allboards.append(board)                         #Add the board to the final array of every room
         boardstartpos = boardstartpos + board.size + 2  #You have to include the 2 board size bytes since that's what we want to read next
     
@@ -1338,4 +1337,401 @@ def open_binary(path):
         flags = flags | os.O_BINARY
     return os.open(path, flags)
 
+def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world):
+    if name == "":
+        name = world.gamename
+    save = open(name + ".sav", "wb")
+    
+    #Overflow array
+    overflow = []
+    
+    #ZZT File bytes
+    save.write(chr(255)*2)
+    
+    print "Number of boards...", len(allboards)-1
+    #Number of boards
+    if len(allboards)-1 <= 255:
+        save.write(chr(len(allboards)-1))
+        save.write(chr(0))
+    else: #DOUBLECHECK
+        temp = len(allboards)-1
+        save.write(chr(temp%256))
+        save.write(chr(temp/256))
+        
+    #Ammo
+    if ammo <= 32767:
+        save.write(chr(ammo%256))
+        save.write(chr(ammo/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("ammo", ammo))
+    
+    #Gems
+    if gems <= 32767:
+        save.write(chr(gems%256))
+        save.write(chr(gems/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("gems", gems))
+        
+    #Keys
+    for key in keys[:-1]:
+        save.write(chr(key))
+    if keys[7] > 0: #Black key
+        overflow.append(("Blackkey", keys[7]))
+        
+    #Health
+    if health <= 32767:
+        save.write(chr(health%256))
+        save.write(chr(health/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("health", health))
+        
+    #Startingboard
+    if board.number <= 255:
+        save.write(chr(board.number))
+        save.write(chr(0))
+    else: #DOUBLECHECK
+        save.write(chr(board.number%256))
+        save.write(chr(board.number/256))
+    
+    #Torches
+    if torches <= 32767:
+        save.write(chr(torches%256))
+        save.write(chr(torches/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("torches", torches))
+        
+    #Torch Cycles
+    if tcycles <= 32767:
+        save.write(chr(tcycles%256))
+        save.write(chr(tcycles/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("tcycles", tcycles))
+        
+    #Energizer Cycles
+    if ecycles <= 32767:
+        save.write(chr(ecycles%256))
+        save.write(chr(ecycles/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("ecycles", ecycles))
+        
+    #Additonal save data Pt. 1
+    save.write(chr(255)*2) #We'll go back to these bytes eventually
+    
+    #Score
+    if score <= 32767:
+        save.write(chr(score%256))
+        save.write(chr(score/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("score", score))
+        
+    #Game Name Length + Game Name
+    save.write(chr(world.gamenamelength))
+    padding = 20 - world.gamenamelength
+    save.write(world.gamename)
+    save.write(chr(0)*padding)
+    
+    #Flags
+    print flags
+    for flag in flags[:10]: #Store the first 10 flags
+        if flag == "":
+            save.write(21*chr(0))
+        else:
+            save.write(chr(len(flag)))
+            save.write(flag[:20]) #20 Character limit is enforced
+            if len(flag) < 20:
+                save.write((20-len(flag))*chr(0))
+    
+    #Unused flags
+    if len(flags) < 10:
+        save.write((21*chr(0))*(10-len(flags)))
+    
+    #Extra Flags
+    if len(flags) > 10:
+        for flag in flags[10:]:
+            overflow.append("flag", flag)
+            
+    #Time passed
+    if timepassed <= 32767:
+        save.write(chr(timepassed%256))
+        save.write(chr(timepassed/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("timepassed", timepassed))
+        
+    #Title Color/Length
+    save.write(chr(world.gamecolor))
+    save.write(chr(world.gamelength))
+    
+    #Save Byte
+    save.write(chr(1))
+    
+    #Game name
+    save.write(world.gamename)
+    save.write((42-len(world.gamename))*chr(0))
+    
+    #Excess padding
+    save.write(chr(0)*205)
+    
+    print save.tell()
+    
+    #----------------------------------------------------
+    #Board Data
+    #----------------------------------------------------
+    for room in allboards:
+        if room.number == board.number:
+            overflow = SaveBoard(save, save.tell(), allboards, board, world, overflow)
+        else:
+            overflow = SaveBoard(save, save.tell(), allboards, room, world, overflow)
+    
+    return #Done saving
+    
+def SaveBoard(save, address, allboards, board, world, overflow):
+    print "Saving board... \"", board.title, "\"", board.number
+    #Since we need to backtrack it's easier to write values to variables first then concat. them later
+    boardsize = 0
+    print "Board size bytes are at:", address
+    save.write(chr(255)*2)#DEBUG TEMPORARY LINE
+    
+    #Board title and length
+    titlelength = chr(board.titlelength)
+    title = board.title + (50-len(board.title))*chr(0)
+    
+    save.write(titlelength)#DEBUG TEMPORARY LINE
+    save.write(title)#DEBUG TEMPORARY LINE
+    
+    #Now we work the magic...    
+    elements = 0 #This counts to 1500
+    times = 0
+    oldbase = None
+    
+    while elements < 1500:
+        x = elements / 60 #0-24
+        y = elements % 60 #0-59
+        
+        base = (board.room[x][y].name, board.room[x][y].foregroundcolor, board.room[x][y].backgroundcolor) #This is the base element
+        if (base == oldbase):
+            #print "Match!", x, y
+            times = times + 1 #How many times does the element occur
+        else:
+            if oldbase == None:
+                times = times + 1
+                #print "First element"
+            
+            if oldbase != None:
+                #print base[0] + " isn't " + oldbase[0]
+                #elements = elements + times
+                #print "Writing:", times, oldbase[0]
+                
+                #Check for under 256 repetitions:
+                if times < 256:
+                    save.write(chr(times)) #Times the element occurs
+                    save.write(chr(RevIDDict[oldbase[0]])) #ID of element
+                    save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+                    boardsize = boardsize + 3 #Increase board size!
+                    #chr((RevIDDict[oldbase[1]]*16) + (RevIDDict[oldbase[2]]))
+                else:
+                    while times > 256:
+                        save.write(chr(255)) #Max size
+                        save.write(chr(RevIDDict[oldbase[0]])) #ID of element
+                        save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+                        boardsize = boardsize + 3 #Increase board size!
+                        times = times - 255
+                    save.write(chr(times)) #Max size
+                    save.write(chr(RevIDDict[oldbase[0]])) #ID of element
+                    save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+                
+                
+                #Reset
+                times = 1
+            oldbase = base
+            #print "Adding:", times, base[0]
+            
+            
+        
+        elements = elements + 1
+    #-------------------------------------------------------------
+        
+    #Check for under 256 repetitions:
+    print "Finishing:", times, base[0]
+    if times < 256:
+        save.write(chr(times)) #Times the element occurs
+        save.write(chr(RevIDDict[base[0]])) #ID of element
+        save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+        boardsize = boardsize + 3 #Increase board size!
+    else:
+        while times > 256:
+            save.write(chr(255)) #Max size
+            save.write(chr(RevIDDict[base[0]])) #ID of element
+            save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+            boardsize = boardsize + 3 #Increase board size!
+            times = times - 255
+        save.write(chr(times)) #Max size
+        save.write(chr(RevIDDict[base[0]])) #ID of element
+        save.write(chr((RevColorDict[oldbase[2]]*16) + (RevColorDict[oldbase[1]]))) #Color of element
+        boardsize = boardsize + 3 #Increase board size!
+    
+    print "DECIMAL LOCATION:", save.tell()
+    #------------------------------------------------------------
+    
+    #Shots on board - 1 byte
+    save.write(chr(board.shots))
+    
+    #Dark board - 1 byte
+    save.write(chr(board.dark))
+    
+    #Boards connected - 1 byte each
+    save.write(chr(board.boardnorth))
+    save.write(chr(board.boardsouth))
+    save.write(chr(board.boardwest))
+    save.write(chr(board.boardeast))
+    
+    #Re-enter when Zapped - 1 byte
+    save.write(chr(board.zap))
+    
+    #Message length + Message - 2 bytes + 58 bytes      DEBUG Wow something is up with this.
+    if board.msglength > 0:
+        save.write(chr(board.msglength-2))
+        save.write(board.msg[1:-1])
+        save.write(chr(0)*(58-len(board.msg[1:-1])))
+    else:
+        save.write(chr(0)*59) #No message
+    #self.msg + " (" + str(self.msglength) + ") "
+    
+    #Enter X/Y - 1 byte each
+    save.write(chr(board.enterX))
+    save.write(chr(board.enterY))
+    
+    #Time limit - 2 bytes
+    if board.timelimit <= 32767:
+        save.write(chr(board.timelimit%256))
+        save.write(chr(board.timelimit/256))
+    else:
+        save.write(chr(255)*2)
+        overflow.append(("timelimit", timelimit))
+
+    #More padding! - 16 bytes
+    save.write(chr(0)*16)
+    
+    #-------------------------------------------------------------
+    
+    #Number of stat elements besides the player - 2 bytes
+    save.write(chr((len(board.statcoords)-1)%256))
+    save.write(chr((len(board.statcoords)-1)/256))
+    
+    for coords in board.statcoords:
+        
+        #Pre-emptive error prevention
+        """if (board.room[coords[0]][coords[1]].xstep == ""):
+            board.room[coords[0]][coords[1]].xstep = 0
+        if (board.room[coords[0]][coords[1]].ystep == ""):
+            board.room[coords[0]][coords[1]].ystep = 0
+        """
+        #X/Y Coordinates - 1 byte each
+        save.write(chr(coords[1]+1)) #X-coord (Tyger uses 0-24. ZZT uses 1-25)
+        save.write(chr(coords[0]+1)) #Y-coord (Tyger uses 0-59. ZZT uses 1-60)
+        
+        
+        #X/Y-step - 2 bytes each
+        save.write(chr(board.room[coords[0]][coords[1]].xstep/256))
+        save.write(chr(board.room[coords[0]][coords[1]].xstep/256))
+        save.write(chr(board.room[coords[0]][coords[1]].ystep%256))
+        save.write(chr(board.room[coords[0]][coords[1]].ystep/256))
+        
+        #Cycle - 2 bytes
+        save.write(chr(board.room[coords[0]][coords[1]].cycle%256))
+        save.write(chr(board.room[coords[0]][coords[1]].cycle/256))
+        
+        #Parameters 1-3 - 1 byte each
+        save.write(chr(board.room[coords[0]][coords[1]].param1))
+        save.write(chr(board.room[coords[0]][coords[1]].param2))
+        save.write(chr(board.room[coords[0]][coords[1]].param3))
+        
+        #Follow/Lead Number - 2 bytes each
+        if board.room[coords[0]][coords[1]].follownum == "":
+            board.room[coords[0]][coords[1]].follownum = 0
+        if board.room[coords[0]][coords[1]].leadnum == "":
+            board.room[coords[0]][coords[1]].leadnum = 0
+        #print "TEST", board.room[coords[0]][coords[1]].follownum%256
+        save.write(chr(board.room[coords[0]][coords[1]].follownum%256))
+        save.write(chr(board.room[coords[0]][coords[1]].follownum/256))
+        save.write(chr(board.room[coords[0]][coords[1]].leadnum%256))
+        save.write(chr(board.room[coords[0]][coords[1]].leadnum/256))
+        
+        #Under ID/Color - 1 byte each
+        save.write(chr(RevIDDict[board.roomunder[coords[0]][coords[1]].name]))
+        save.write(chr((RevColorDict[board.roomunder[coords[0]][coords[1]].backgroundcolor]*16) + (RevColorDict[board.roomunder[coords[0]][coords[1]].foregroundcolor])))
+       
+        #Pointer Padding - 1 byte
+        save.write(chr(0)*4)
+        
+        #Current Instruction - 2 bytes
+        if board.room[coords[0]][coords[1]].line < 0:
+            save.write(chr(0)*2)
+        else:
+            save.write(chr(board.room[coords[0]][coords[1]].line%256))
+            save.write(chr(board.room[coords[0]][coords[1]].line/256))
+        
+        #ZZT-OOP Length - 2 bytes
+        save.write(chr(board.room[coords[0]][coords[1]].oopLength%256))
+        save.write(chr(board.room[coords[0]][coords[1]].oopLength/256))
+        #board.room[coords[0]][coords[1]].xstep
+        #board.room[coords[0]][coords[1]].ystep
+    
+        #Padding - 8 bytes
+        save.write(chr(0)*8)
+        
+        #ZZT-OOP - Varies
+        if board.room[coords[0]][coords[1]].oopLength > 0:
+            oop = board.room[coords[0]][coords[1]].oop
+            oop = oop.replace("\n", "\r") #Replace newlines with Carriage Returns as ZZT wants
+            save.write(oop)
+            
+    #Write board size finally - 2 bytes
+    end = save.tell()
+    print "Board bytes are at: ", address
+    print "ENDING LOCATION:", end
+    print "ANSWER: 2258"
+    truesize = end - address - 2
+    print "True size:", truesize
+    save.seek(address) #Jump backwards
+    save.write(chr(truesize%256))
+    save.write(chr(truesize/256))
+    save.seek(end) #Jump forwards
+    
+    return overflow #Done.
+    
+def TypedInput(message, name, screen):
+    userinput = ""
+    coord = 0
+    Oop.TextBox(message, name, screen, True)
+    while 1:
+        for event in pygame.event.get():
+            if (event.type == KEYDOWN) and (event.key != K_RETURN): #Add a character
+                if event.key == K_BACKSPACE:
+                    userinput = userinput[:-1]
+                    tempchar = Tyger.makeimage(32, Tyger.white, Tyger.bgdarkblue) #Create the character
+                    coord = coord-1
+                    if coord < 0:
+                        coord = 0
+                    screen.blit(tempchar, ((14+coord)*8,196)) #Stamp it onto the surface for the line
+                else:
+                    try: 
+                        ord(event.unicode)
+                        userinput = userinput + event.unicode
+                        tempchar = Tyger.makeimage(ord(event.unicode), Tyger.white, Tyger.bgdarkblue) #Create the character
+                        screen.blit(tempchar, ((14+coord)*8,196)) #Stamp it onto the surface for the line
+                        coord = coord+1
+                    except TypeError: 
+                        None
+                pygame.display.update()
+                print userinput
+            elif event.key == K_RETURN: #Submit string
+                return userinput
 if __name__ == '__main__': main()

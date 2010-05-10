@@ -110,7 +110,7 @@ def updatehud(status, hud, digits, health, ammo, torches, tcycles, ecycles, gems
             
         #Keys
         for x in range(0, 7): #7 keys
-            if keys[x] == 1: #If you have this key, get it to draw
+            if keys[x] >= 1: #If you have this key, get it to draw
                 position = x*8 #Coordinate of the individual digit
                 subsect = Rect(position, 0, 8, 14)
                 tempimage.blit(keyimg, (0,0), subsect)
