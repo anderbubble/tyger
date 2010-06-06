@@ -13,13 +13,17 @@ import binascii
 import random
 from pygame.locals import *
 from sys import exit
+from sys import argv
 
 #Get the external files related to Tyger
 from Dictionaries import *      #Dictionaries
 from Hud import *               #HUD and minhud features
 from Title import *             #Title screen for world/save selecting
 from Elements import *          #Handling of every element
+from Gfx import *               #Graphics
 
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+pygame.init()
 
 #------------------------------------------------------------------------------------------------------------
 #   Tyger
@@ -51,11 +55,13 @@ except IOError:
     options.append("False")
     options.append("False")
     options.append("False")
+    options.append("Tyger")
+    options.append("Full")
 
 hud = options[0] #Set up the HUD variable
     
 print "OPTIONS: ", options
-paldir  = "gfx/" #Set directory for pallete
+#paldir  = "gfx/" #Set directory for pallete
 
 #paldir  = "gfx/cga/"
 
@@ -82,85 +88,16 @@ if hud == "min":
 else:
     status = pygame.image.load("gfx/sidebar.png")
 
-digits = pygame.image.load("gfx/digitsmin.png")     #Digits for HUD
-keyimg = pygame.image.load("gfx/keysmin.png")       #Keys for HUD
+digits   = pygame.image.load("gfx/digitsmin.png")     #Digits for HUD
+keyimg   = pygame.image.load("gfx/keysmin.png")       #Keys for HUD
+darkness = pygame.image.load("gfx/darkness.png")
 
-#Standard Colors
-blue            = pygame.image.load(paldir + "blue.png")
-green           = pygame.image.load(paldir + "green.png")
-cyan            = pygame.image.load(paldir + "cyan.png")
-red             = pygame.image.load(paldir + "red.png")
-purple          = pygame.image.load(paldir + "purple.png")
-yellow          = pygame.image.load(paldir + "yellow.png")
-white           = pygame.image.load(paldir + "white.png")
-black           = pygame.image.load(paldir + "black.png")
-gray            = pygame.image.load(paldir + "gray.png")
-darkblue        = pygame.image.load(paldir + "darkblue.png")
-darkgreen       = pygame.image.load(paldir + "darkgreen.png")
-darkcyan        = pygame.image.load(paldir + "darkcyan.png")
-darkred         = pygame.image.load(paldir + "darkred.png")
-darkpurple      = pygame.image.load(paldir + "darkpurple.png")
-darkyellow      = pygame.image.load(paldir + "darkyellow.png")
-darkgray        = pygame.image.load(paldir + "darkgray.png")
+#Foreground Colors
+global blue
+blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray = InitFG("gfx/")
 
-
-
-#Define background colors
-
-
-if paldir == "gfx/":
-    #                  R    G    B    a   
-    bgblue          = (000, 000, 255, 255)
-    bggreen         = (000, 255, 000, 255)
-    bgcyan          = (000, 255, 255, 255)
-    bgred           = (255, 000, 000, 255)
-    bgpurple        = (255, 000, 255, 255)
-    bgyellow        = (255, 255, 000, 255)
-    bgwhite         = (255, 255, 255, 255)
-    bgblack         = (000, 000, 000, 255)
-    bgdarkblue      = (000, 000, 168, 255)
-    bgdarkgreen     = (000, 168, 000, 255)
-    bgdarkcyan      = (000, 168, 168, 255)
-    bgdarkred       = (168, 000, 000, 255)
-    bgdarkpurple    = (168, 000, 168, 255)
-    bgdarkyellow    = (168, 168, 000, 255)
-    bggray          = (168, 168, 168, 255)
-    bgdarkgray      = ( 84,  84,  84, 255)
-else:
-    colors = open(paldir + "colors.txt", "r")
-    temp = colors.readline()
-    bgblue          = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bggreen         = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgcyan          = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgred           = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgpurple        = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgyellow        = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgwhite         = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgblack         = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkblue      = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkgreen     = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkcyan      = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkred       = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkpurple    = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkyellow    = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bggray          = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    temp = colors.readline()
-    bgdarkgray      = (int(temp[0:2], 16), int(temp[2:4], 16), int(temp[4:6], 16), int(temp[6:8], 16))
-    colors.close()
+#Background colors
+bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = InitBG("gfx/")
 
 #Setup the game clock
 clock = pygame.time.Clock()
@@ -170,14 +107,19 @@ time_passed = clock.tick(60)
 allboards = []
 world = None
 
-
+#Command line game launching
+cmdline = []
+for arg in argv[1:]:
+    cmdline.append(arg)
+print cmdline
+if len(cmdline) == 0:
+    cmdline = ["none"]
 
 def main():
     RESOLUTION = res
     FSCREEN = False
     
-    pygame.init()
-    
+    #pygame.init()
     pygame.display.set_caption("Tyger")
     icon = pygame.image.load("gfx/tyger.png")
     pygame.display.set_icon(icon)
@@ -194,11 +136,15 @@ def main():
         Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
     
     #Do the whole title screen thing for Tyger
-    zztfile = titlescreen(screen, RESOLUTION, Error)
+    if cmdline[len(cmdline[0])-4:] == ".sav" or cmdline[0][len(cmdline[0])-4:] == ".zzt":
+        zztfile = cmdline[0]
+    else:
+        zztfile = titlescreen(screen, RESOLUTION, Error)
 
     #Start a new game
-    world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
-    
+    #world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+    world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+    #return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray
     #Double the resolution if running in 2x mode
     if options[2] == "True":
         if hud != "min":
@@ -208,7 +154,7 @@ def main():
         screen = pygame.display.set_mode(RESOLUTION)
     
     #MAIN GAME LOOP
-    pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
+    #pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
     
     #Time and input initial variables
     seconds = 0
@@ -274,14 +220,15 @@ def main():
                         RESOLUTION = (480, 364)
                     screen = pygame.display.set_mode(RESOLUTION)
                     zztfile = titlescreen(screen, RESOLUTION)
-                    world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+                    world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+                    #world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
                     if options[2] == "True":
                         if hud != "min":
                             RESOLUTION = (640*((options[2]=="True") +1), 350*((options[2]=="True") +1))
                         else:
                             RESOLUTION = (480*((options[2]=="True") +1), 364*((options[2]=="True") +1))
                     screen = pygame.display.set_mode(RESOLUTION)
-                    pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
+                    pygame.display.set_caption("Tyger")
                     seconds, cycles = 0, 0
                     input = "null" 
                     continue
@@ -318,8 +265,6 @@ def main():
                     input = "null"
             
             if event.type == MOUSEBUTTONUP and event.button == 3:
-                global bgdarkblue
-                bgdarkblue = (100, 200, 50, 255)
                 getinfo(pygame.mouse.get_pos(), board, screen)
         
         #Timing
@@ -385,7 +330,7 @@ def main():
         if record == True:
             capture = capture + 1
             pygame.image.save(screen, "record/" + world.gamename + " - " + str(capture)+".png")
-        pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
+        #pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
         #pygame.display.set_caption("Time: " + str(time) + " Seconds: " + str(seconds) + "Cycles?: " +str(cycles) + "/" + str(intcycles))
         #print "Time: " + str(time) + " Seconds: " + str(seconds) + "Cycles?: " +str(cycles)
         
@@ -577,17 +522,18 @@ class Board(object):
         #Store number
         self.number = number
         
-        #Create an empty array
+        #Create an empty array for the room, under layer, and drawing rules
         self.room = []
         self.roomunder = []
+        self.render = []
         for x in xrange(0,25):
             self.room.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-            #self.roomunder.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
             self.roomunder.append([Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element(),Element()])
+            self.render.append([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
         #printarray(self.room)
         
         #Get the board title -        A title's maximum length is different depending on what your source is:
-        self.titlelength = read(file)#ZZT's editor and ZZTA use 34 characters, Kev-edit uses 42, Nano's ZZT file format says 33 then padding
+        self.titlelength = read(file)#ZZT's editor and ZZTAE use 34 characters, Kev-edit uses 42, Nano's ZZT file format says 33 then padding
         self.title = sread(file, 50) #if you use all the padding you get 50 possible characters so that's what I went with. This displays in ZZT's editor fine.
         self.title = self.title[:self.titlelength]
         
@@ -686,14 +632,17 @@ class Board(object):
             self.room[y-1][x-1].underID = read(file)
             self.room[y-1][x-1].underColor = read(file)
             #print "AN UNDERCOLOR", self.room[y-1][x-1].underColor
+            #self.roomunder[y-1][x-1].foreground = getFg(str(self.room[y-1][x-1].underColor))
+            #self.roomunder[y-1][x-1].background = getBg(str(self.room[y-1][x-1].underColor))
             
             #If it's a player bullet make sure we increase it so we can compare to the limit
             if self.room[y-1][x-1].param1 == 0 and self.room[y-1][x-1].name == "bullet":
                 self.playerbullets = self.playerbullets + 1
             
-            #DEBUG HEY WE MIGHT WANT TO ACTUALLY PUT THE UNDER INFORMATION ON THE BOARD
-            self.roomunder[y-1][x-1] = Spawn(IdDict[self.room[y-1][x-1].underID], CharDict[self.room[y-1][x-1].underID], red, bgdarkred, (y,x), 0, 0, 3, 0, 0, 0)
+            #Apply colors below
+            self.roomunder[y-1][x-1] = Spawn(IdDict[self.room[y-1][x-1].underID], CharDict[self.room[y-1][x-1].underID], getFg(str(self.room[y-1][x-1].underColor)), getBg(str(self.room[y-1][x-1].underColor)), (y,x), 0, 0, 3, 0, 0, 0)
             #self.roomunder[y-1][x-1].underColor = self.room[y-1][x-1].underColor
+            #print self.roomunder[y-1][x-1].underColor, "UNDERCOLOR!"
             
             sread(file, 4) #Pointer. No use for us here.
             
@@ -895,15 +844,17 @@ def gfx2bgcolor(background):
 
 
 def drawboard(screen, board):
-    
-    #Render special graphics as needed
+    rendered = 0
     for col in xrange(0,25):
         for row in xrange(0,60):
             
+            
             #Draw a dark room
-            if board.dark != 0 and (board.room[col][row].name != "player" and board.room[col][row].name != "passage"):
+            """
+            if board.dark != 0 and (board.room[col][row].name != "player" and board.room[col][row].name != "passage" and board.room[col][row].name != "ammo"):
                 #Are you in a lit area?
                 try:
+                    #lighting = LightDict[(abs(board.statcoords[0][0] - col), abs(board.statcoords[0][1] - row))]
                     lighting = LightDict[(abs(board.statcoords[0][0] - col), abs(board.statcoords[0][1] - row))]
                     if lighting == "Dark":
                         board.room[col][row].image = makeimage(176, darkgray, bgblack)
@@ -913,17 +864,18 @@ def drawboard(screen, board):
                     board.room[col][row].image = makeimage(176, darkgray, bgblack)
                     screen.blit(board.room[col][row].image, (row*8,col*14))
                     continue
-                #print "Dark room!"
+            #print "Dark room!"
+            """
             #print str(col) + "/" + str(row)
             #if board.room[col][row].name == "object" or ((board.room[col][row].name == "solid" or board.room[col][row].name == "normal" or board.room[col][row].name == "breakable" or board.room[col][row].name == "water" or board.room[col][row].name == "fake") and board.room[col][row].param1 > 0):
-            if board.room[col][row].name == "object" and (board.room[col][row].character != board.room[col][row].param1):
+            if board.room[col][row].name == "object" and (board.room[col][row].character != board.room[col][row].param1) and (board.render[col][row] != 0):
                 board.room[col][row].character = board.room[col][row].param1
                 board.room[col][row].image = makeimage(board.room[col][row].param1, board.room[col][row].foreground, board.room[col][row].background)
-            elif board.room[col][row].name == "line":
+            elif board.room[col][row].name == "line" and (board.render[col][row] != 0):
                 board.room[col][row].image, board.room[col][row].character = linewallrender(board.room, col, row)
-            elif board.room[col][row].name == "empty":
+            elif board.room[col][row].name == "empty" and (board.render[col][row] != 0):
                 board.room[col][row].image = makeimage(board.room[col][row].character, black, bgblack)
-            elif board.room[col][row].name == "pusher":
+            elif board.room[col][row].name == "pusher" and (board.render[col][row] != 0):
                 if board.room[col][row].ystep < 0:
                     board.room[col][row].character = 30 #North
                 elif board.room[col][row].ystep > 0:
@@ -934,10 +886,15 @@ def drawboard(screen, board):
                     board.room[col][row].character = 16 #West
                 board.room[col][row].image = makeimage(board.room[col][row].character, board.room[col][row].foreground, board.room[col][row].background)
             else:
-                board.room[col][row].image = makeimage(board.room[col][row].character, board.room[col][row].foreground, board.room[col][row].background)
-
+                if board.render[col][row] != 0:
+                    board.room[col][row].image = makeimage(board.room[col][row].character, board.room[col][row].foreground, board.room[col][row].background)
+            
             #Actually draw whatever needs to be drawn
-            screen.blit(board.room[col][row].image, (row*8,col*14))
+            if (board.render[col][row] != 0) or options[6] == "Full":
+                screen.blit(board.room[col][row].image, (row*8,col*14))
+                if options[6] != "Full": #This if statement will be redundant when everything is ready for partial rendering. The line below will occur always eventually.
+                    board.render[col][row] = 0
+                rendered = rendered + 1
             
             if board.msg != "":
                 #print "WHAT THE"
@@ -946,6 +903,8 @@ def drawboard(screen, board):
                 if Oop.TextMessage == None:
                     Oop.MessageLine(board.msg, screen, board, priority="High") #DEBUG MAYBE
                 screen.blit(Oop.TextMessage, ((240 - offset),336))
+                
+        pygame.display.set_caption("Tiles Rendered: " + str(rendered))
             
 def OopToArray(file, oopLength):
     #Read the oop to a string IF THERE'S OOP TO READ
@@ -1013,6 +972,8 @@ def linewallrender(room, col, row):
     return makeimage(LineDict[(n,s,e,w)], room[col][row].foreground, room[col][row].background), LineDict[(n,s,e,w)]
 
 def customdata(custom):
+    custom = "gfx\\" + custom.lower() + "\\"
+    
     global blue
     global green
     global cyan
@@ -1047,141 +1008,16 @@ def customdata(custom):
     global bgdarkyellow
     global bgdarkgray
     
-    
-    #Foreground fonts
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        blue = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        green = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        cyan = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        red = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        purple = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        yellow = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        white = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        black = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        gray = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        darkblue = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        darkgreen = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        darkcyan = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        darkred = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        darkpurple = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        darkyellow = pygame.image.load(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        darkgray = pygame.image.load(temp)
-    
+    #print "Testing", str(blue)
+    #Foreground Colors
+    blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray = InitFG(custom)
+
     #Background colors
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgblue = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bggreen = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgcyan = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgred = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgpurple = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgyellow = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgwhite = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgblack = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bggray = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgdarkblue = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgdarkgreen = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgdarkcyan = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgdarkred = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgdarkpurple = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]
-    if temp != "X":
-        bgdarkyellow = eval(temp)
-    temp = custom.readline()
-    temp = temp[8:-1]    
-    if temp != "X":
-        bgdarkgray = eval(temp)
-    
+    bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = InitBG(custom)
 
-
+    return blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray
+    #Background colors
+    #print "X"
 
 
 def Dprint(text, file=logfile):
@@ -1237,10 +1073,15 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     #Activate any custom graphics/palletes. Currently broken due to namespace.
     try:
         custom = open((zztfile[:-4]+".tyx"), "r")
-        Dprint("Loading custom data")
-        customdata(custom)
+        print "Loading custom data for", zztfile
+        blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = customdata(zztfile[:-4])
     except IOError:
         Dprint("No custom data")
+        if options[5] != "Tyger":
+            print "Applying user font -", options[5]
+            blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = customdata(options[5])
+        else:
+            blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = customdata("")
     
     #Get world data
     world = World(game)
@@ -1289,8 +1130,9 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     drawboard(screen, board)
 
     pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
-    return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed
-
+    #return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed
+    return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray
+    
 def playgame(world, allboards, screen):
     print "Playing"
     random.seed()
@@ -1345,11 +1187,11 @@ def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, ge
     #Overflow array
     overflow = []
     
-    #ZZT File bytes
+    #ZZT File bytes - 2 bytes
     save.write(chr(255)*2)
     
     print "Number of boards...", len(allboards)-1
-    #Number of boards
+    #Number of boards - 2 bytes
     if len(allboards)-1 <= 255:
         save.write(chr(len(allboards)-1))
         save.write(chr(0))
@@ -1358,7 +1200,7 @@ def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, ge
         save.write(chr(temp%256))
         save.write(chr(temp/256))
         
-    #Ammo
+    #Ammo - 2 bytes
     if ammo <= 32767:
         save.write(chr(ammo%256))
         save.write(chr(ammo/256))
@@ -1366,7 +1208,7 @@ def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, ge
         save.write(chr(255)*2)
         overflow.append(("ammo", ammo))
     
-    #Gems
+    #Gems - 2 bytes
     if gems <= 32767:
         save.write(chr(gems%256))
         save.write(chr(gems/256))
@@ -1374,13 +1216,13 @@ def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, ge
         save.write(chr(255)*2)
         overflow.append(("gems", gems))
         
-    #Keys
+    #Keys - 2 bytes
     for key in keys[:-1]:
         save.write(chr(key))
     if keys[7] > 0: #Black key
         overflow.append(("Blackkey", keys[7]))
         
-    #Health
+    #Health - 2 bytes
     if health <= 32767:
         save.write(chr(health%256))
         save.write(chr(health/256))
@@ -1388,7 +1230,7 @@ def SaveGame(name, allboards, ammo, torches, health, flags, tcycles, ecycles, ge
         save.write(chr(255)*2)
         overflow.append(("health", health))
         
-    #Startingboard
+    #Startingboard - 2 bytes
     if board.number <= 255:
         save.write(chr(board.number))
         save.write(chr(0))
