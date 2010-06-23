@@ -3,7 +3,7 @@ from pygame.locals import *
 from sys import exit
 
 def drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, timepassed):
-    if hud == "min":
+    if hud == "Min":
         status = pygame.image.load("gfx/minhud.png").convert()
         digits = pygame.image.load("gfx/digitsmin.png").convert()
         keyimg = pygame.image.load("gfx/keysmin.png").convert()
@@ -14,7 +14,7 @@ def drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ec
         keyimg = pygame.image.load("gfx/keys.png").convert()
         screen.blit(status, (480,0))
     image = updatehud(status, hud, digits, health, ammo, torches, tcycles, ecycles, gems, score, keys, timepassed, keyimg)
-    if hud == "min":
+    if hud == "Min":
         screen.blit(image, (0,350))
     else:
         screen.blit(image, (480,0))
@@ -56,7 +56,7 @@ def updatehud(status, hud, digits, health, ammo, torches, tcycles, ecycles, gems
     if int(ecycles) < 0:
         ecycles ="0"
     
-    if hud == "min":
+    if hud == "Min":
         #Repeat for other counters
         #print "Keys? " + str(keys)
         #Health

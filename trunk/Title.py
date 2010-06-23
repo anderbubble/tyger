@@ -24,7 +24,7 @@ def titlescreen(screen, RESOLUTION, Error=None):
     board.room[board.statcoords[0][0]][board.statcoords[0][1]] = Element("monitor", 32, gray, bgblack, board.statcoords[0])
     screen = pygame.display.set_mode(RESOLUTION) #NOFRAME alt param
     #screen.blit(titlescreen, (0,0))
-    drawboard(screen, board)
+    drawboard(screen, board, 0)
     pygame.display.update()
     print "# Games/Saves: " + str(len(games)) + "/" + str(len(saves))
     
@@ -64,7 +64,7 @@ def titlescreen(screen, RESOLUTION, Error=None):
             Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              games or saves!\n\n  ####    Please place any games in your\n  ####    Tyger folder. You can find new\n          ZZT and Tyger worlds at:\n\n$    http://zzt.belsambar.net \n"
             Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
             mode = None
-        drawboard(screen, board)
+        drawboard(screen, board, tcycles)
         pygame.display.update()
     
     x = 0
