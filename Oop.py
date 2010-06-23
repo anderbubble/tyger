@@ -9,6 +9,8 @@ from sys import exit
 global TextMessage
 TextMessage = None
 
+#render skip: Go()
+
 def Become(command, board, x, y, current, AddStats = True, AdvanceLine = True):
     # #become white blue player
     fg = "red"
@@ -140,6 +142,7 @@ def Become(command, board, x, y, current, AddStats = True, AdvanceLine = True):
                 board.statcoords.append((x, y)) #Add the new stat if needed
         #                     Name   Character                     FGColor  BGColor  Coords  Xstep, Ystep Cycle Param1 Param2 Param3 Follownum Leadnum uID uColor line ooplength oop)
         element = Tyger.Spawn(thing, CharDict[Name2IdDict[thing]], FGImage, BGImage, (x, y), 0,     0,    cycle,    0,     0,     0,     0,        0,      0,  0,     0,   0,        None)    
+        board.render[x][y] = 1
     
     return element, True
 
@@ -257,6 +260,7 @@ def Cycle(cycle, current):
 def Die(board, x, y):
     element = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0)
     Elements.DestroyStat(board, x, y)
+    board.render[x][y] = 1
     return element
     
 def Give(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys, current, board, NoAdvance):
@@ -334,6 +338,8 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
         board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = object #Move the object
         board.room[x][y] = board.roomunder[x][y] #Destroy the old object and update its stat
         Elements.UpdateStat(board, x, y, x+(dir == "s")-(dir == "n"), y+(dir == "e")-(dir == "w"))
+        board.render[x][y] = 1
+        board.render[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = 1
         Moved = True
         progress = 100 #Ok you're done parsing oop this cycle
         #print "OK I MOVED!"
@@ -351,6 +357,8 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
         else:
             Moved = True
             progress = 100 #These 30 million variables that determine how the code is advanced is the worst thing of all time.
+            board.render[x][y] = 1
+            board.render[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = 1
         #print "Nope"
         #object.name = "object"
         #print "Left push"
@@ -360,16 +368,17 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
         #print "Try something will ya"
         if current.split(" ")[0] == "#try" or current[0] == "?":
             try:
-                #print str(IsDirDict[current.split(" ")[-1]])
+                str(IsDirDict[current.split(" ")[-1]])
                 #print "It is a direction"
                 Moved = True
             except KeyError:
                 #print "It is not a direction..." + (":" + current.split(" ")[-1])
                 #You want to jump to this label.
-                print "Uh oh"
-                Oop.SendJump(object, ":" + current.split(" ")[-1])
+                #print "Uh oh"
+                SendJump(object, ":" + current.split(" ")[-1])
                 progress = 100
                 Moved = False
+                #DEBUG - There's supposed to not be a cycle delay on this.
         else:
             Moved = False
             
@@ -595,7 +604,7 @@ def Message(object, screen, board):
     #At this point the message is properly split line by line!
     
     if Multiline:
-        label = TextBox(message, object.oop.split("\n")[0], screen)
+        label = TextBox(message, object.oop.split("\n")[0], screen, board)
         if label != None:
             SendJump(object, label)
             return NoAdvance, object
@@ -760,6 +769,7 @@ def Shoot(current, x, y, board, object, health):
         else:
             board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("bullet", 248, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
         board.statcoords.append((x-(dir=="n")+(dir=="s"), y-(dir=="w")+(dir=="e"))) #Make the stat
+        board.render[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = 1
     elif (board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "fake" or board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "water"):
         board.roomunder[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] #Put the fake/water on the under layer
         #Spawn the bullet
@@ -768,7 +778,9 @@ def Shoot(current, x, y, board, object, health):
         else:
             board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = Tyger.Spawn("star", 47, Tyger.white, Tyger.bgblack, ((x-(input == "shootup")+(input == "shootdown")),(y-(input == "shootleft")+(input == "shootright"))), ((dir=="e") - (dir=="w")), ((dir=="s") - (dir=="n")), 1, 1, 0, 0)
             print "S.T.A.R.S."
+            
         board.statcoords.append((x-(dir=="n")+(dir=="s"), y-(dir=="w")+(dir=="e"))) #Make the stat
+        board.render[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")] = 1
     elif board.room[x+(dir == "s")-(dir == "n")][y+(dir == "e")-(dir == "w")].name == "player": #You got shot at point blank.
         health = health - 10
     return health
@@ -818,7 +830,12 @@ def Take(ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys,
     print "Take failed!"
     return ammo, torches, gems, score, health, timepassed, tcycles, ecycles, keys
   
-def TextBox(message, name, screen, special=False):
+def TextBox(message, name, screen, board, special=False):
+
+    for x in xrange(3,22):
+        for y in xrange(5,54):
+            board.render[x][y] = 1
+
     messagebox = pygame.Surface((392, 266)) #Create the empty surface
     messagebox.fill(Tyger.bgdarkblue)
     
@@ -1036,7 +1053,7 @@ def TextBox(message, name, screen, special=False):
                     #print filename ,"will be opened"
                     try:
                         file = open(filename, "r")
-                        TextBox(file.read(), filename, screen)
+                        TextBox(file.read(), filename, screen, board)
                         file.close()
                     except IOError:
                         print "File" + filename + "could not be opened!"

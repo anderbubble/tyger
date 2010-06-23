@@ -5,7 +5,8 @@ import pygame
 #from Oop import *
 import Oop
 
-#board.render[x][y] is on line 660 cleanbomb
+#board.render[x][y] is on line 1160 obj
+#Skipped Clockwise(), Blink(), UnderOver()shouldn't need, UpdateStat()shouldn't need
 
 #Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0)
 #To spawn an empty
@@ -358,10 +359,8 @@ def Bullet(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     bullet = board.room[x][y]
     #print str(bullet.xstep) + "/" + str(bullet.ystep)
     if bullet.xstep > 127:
-        None
         bullet.xstep = bullet.xstep-65536
     if bullet.ystep > 127:
-        None
         bullet.ystep = bullet.ystep-65536
     #print str(bullet.xstep) + "/" + str(bullet.ystep)
     #print str((x+bullet.ystep)) + "or" + str(y+bullet.xstep) + "or" + str(x+bullet.ystep) + " or " + str(y+bullet.xstep) #If you're going over an edge
@@ -493,10 +492,10 @@ def ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, scor
     
     #A player.
     if (allboards[destination].room[i1][i2].name == "player"):
+        board = allboards[destination]
         board.render = []
         for x in xrange(0,25):
             board.render.append([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
-        board = allboards[destination]
         timepassed = 0
     #    allboards[destination].room[i1][i2] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (i1, i2), 0, 0, 0, 0, 0, 0)
     
@@ -529,16 +528,20 @@ def ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, scor
         allboards[destination].enterX = i2
         
         #Now jump to the correct board.
-        board.render = []
-        for x in xrange(0,25):
-            board.render.append([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
         board = allboards[destination]
+        
+        #Force it to render
+        for x in xrange(0,25):
+            for y in xrange(0,60):
+                board.render[x][y] = 1
+                #board.render.append([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+            #print "Appending stuff"
         timepassed = 0
     return ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y, screen):
     #cheat = raw_input("?")
-    cheat = Tyger.TypedInput("$Input your cheat: \n!;\n", "@Cheat!", screen)
+    cheat = Tyger.TypedInput("$Input your cheat: \n!;\n", "@Cheat!", screen, board)
     cheat = cheat.lower()
     
     #Did you even type anything?
@@ -667,6 +670,7 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x-1][y+offset].name == "breakable": #If there's some explosion here
             board.room[x-1][y+offset] = board.roomunder[x-1][y+offset]
+            board.render[x-1][y+offset] = 1
     
     for offset in range(-7, 8):
         #Check for borders
@@ -676,6 +680,7 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x][y+offset].name == "breakable": #If there's some explosion here
             board.room[x][y+offset] = board.roomunder[x][y+offset]
+            board.render[x][y+offset] = 1
 
     for offset in range(-4, 5):
             #Check for borders
@@ -685,6 +690,7 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x+4][y+offset].name == "breakable": #If there's some explosion here
             board.room[x+4][y+offset] = board.roomunder[x+4][y+offset]
+            board.render[x+4][y+offset] = 1
 
     for offset in range(-5, 6):
             #Check for borders
@@ -694,6 +700,7 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x+3][y+offset].name == "breakable": #If there's some explosion here
             board.room[x+3][y+offset] = board.roomunder[x+3][y+offset]
+            board.render[x+3][y+offset] = 1
 
     for offset in range(-6, 7):
             #Check for borders
@@ -703,6 +710,7 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x+2][y+offset].name == "breakable": #If there's some explosion here
             board.room[x+2][y+offset] = board.roomunder[x+2][y+offset]
+            board.render[x+2][y+offset] = 1
     
     for offset in range(-6, 7):
             #Check for borders
@@ -712,11 +720,13 @@ def CleanBomb(board, x, y):
             continue #Move to the next column
         if board.room[x+1][y+offset].name == "breakable": #If there's some explosion here
             board.room[x+1][y+offset] = board.roomunder[x+1][y+offset]
+            board.render[x+1][y+offset] = 1
             
     #Lastly, destroy the bomb itself.
     DestroyStat(board, x, y)
     #print str(board.roomunder[x][y])
     board.room[x][y] = board.roomunder[x][y]
+    board.render[x][y] = 1
     
 def Clockwise(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
     #\ | / -
@@ -807,8 +817,8 @@ def Clockwise(board, x, y, input, position, cycles, ammo, torches, health, flags
     
     
     #Tyger.Spawn("solid", 65, Tyger.blue, Tyger.bgblack, (0, 0), 0, 0, 0, 0, 0, 0)
-    
-    blah = raw_input("Hit enter!")
+    blah = 0
+    #blah = raw_input("Hit enter!")
     if blah == "x":
         exit()
     
@@ -823,6 +833,9 @@ def DestroyStat(board, x, y):
 
 def DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, item, allboards, screen):
     injured = False
+    
+    board.render[x][y] = 1 #Render
+    board.render[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")] = 1 #render
     
     #Update stats
     ammo = ammo + 5*(item == "ammo")
@@ -903,6 +916,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD A"
         elif BombDict[board.room[x-4][y+offset].name] == "hurt" and ecycles == 0: #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
+        board.render[x-4][y+offset] = 1
     
     for offset in range(-5, 6):
         #Check for borders
@@ -922,6 +936,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD -5,6"
         elif BombDict[board.room[x-3][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
+        board.render[x-3][y+offset] = 1
 
     for offset in range(-6, 7):
         #Check for borders
@@ -941,6 +956,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD -6,7"
         elif BombDict[board.room[x-2][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10    
+        board.render[x-2][y+offset] = 1
     
     for offset in range(-6, 7):
         #Check for borders
@@ -960,6 +976,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD C"
         elif BombDict[board.room[x-1][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10   
+        board.render[x-1][y+offset] = 1
     
     for offset in range(-7, 8):
         #Check for borders
@@ -979,6 +996,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD D"
         elif BombDict[board.room[x][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10   
+        board.render[x][y+offset] = 1
     
     for offset in range(-4, 5):
         #Check for borders
@@ -999,6 +1017,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD E"
         elif BombDict[board.room[x+4][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
+        board.render[x+4][y+offset] = 1
     
     for offset in range(-5, 6):
         #Check for borders
@@ -1018,6 +1037,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD F"
         elif BombDict[board.room[x+3][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
+        board.render[x+3][y+offset] = 1
 
     for offset in range(-6, 7):
         #Check for borders
@@ -1037,6 +1057,7 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD G"
         elif BombDict[board.room[x+2][y+offset].name] == "hurt": #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10    
+        board.render[x+2][y+offset] = 1
     
     for offset in range(-6, 7):
         #Check for borders
@@ -1057,10 +1078,12 @@ def Explode(board, x, y, health, ecycles):
             print "YOU'RE ALL BLOODY DEAD H"
         elif BombDict[board.room[x+1][y+offset].name] == "hurt" and ecycles == 0: #They'll haf-ta bury what's left of ya' in a soup can!
             health = health - 10
+        board.render[x+1][y+offset] = 1
     
     return health
 
 def Invisible(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, item):
+    board.render[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")] = 1
     board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].name = "normal"
     if board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].param1 > 0:
         board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].character = board.room[x+(input=="down")-(input=="up")][y+(input=="right")-(input=="left")].param1
@@ -1119,10 +1142,13 @@ def Lion(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
                 board.room[board.statcoords[0][0]][board.statcoords[0][1]] = board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]]
                 board.statcoords[0] = (board.enterY, board.enterX)
         board.room[x][y] = board.roomunder[x][y] #Destroy the lion
+        board.render[x][y] = 1
         board.statcoords[position] = "pop" #Destroy the lion's stat
     else:
         board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = board.room[x][y] #Move the lion
         board.room[x][y] = board.roomunder[x][y] #Remove the old lion
+        board.render[x][y] = 1
+        board.render[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = 1
         UpdateStat(board, x, y, x+WalkDict[dir][1], y+WalkDict[dir][0]) #Update its stat
     
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
@@ -1193,6 +1219,7 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             Oop.Change(current.split(" ")[1:], board, x, y, current)
         elif current.split(" ")[0] == "#char": #Continues
             object.param1 = Oop.Char(current.split(" ")[1])
+            board.render[x][y] = 1
         elif current.split(" ")[0] == "#clear": #Continues
             Oop.Clear(current.split(" ")[1].upper(), flags)
         elif current.split(" ")[0] == "#cycle": #Continues
@@ -1299,6 +1326,8 @@ def Object(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             board.room[x+object.ystep][y+object.xstep] = object #Move the object
             board.room[x][y] = board.roomunder[x][y] #Destroy the old object and update its stat
             UpdateStat(board, x, y, x+object.ystep, y+object.xstep)
+            board.render[x][y] = 1
+            board.render[x+object.ystep][y+object.xstep] = 1
         else:
             Oop.SendJump(object, ":thud")
     #print "Returning!"
@@ -1424,6 +1453,11 @@ def Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, h
     
     #Now jump to the correct board.
     board = allboards[destination]
+    
+    #Render board
+    for x in xrange(0,25):
+        for y in xrange(0,60):
+            board.render[x][y] = 1
     input = "null"
     
     #Set time and things
@@ -1438,6 +1472,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #Reduce your energizer and change graphics accordingly
     if ecycles != 0:
         ecycles = ecycles - 1
+        
+        #Rerender
+        board.render[x][y] = 1
         
         #Energizer Colors
         EnerDict = {0:Tyger.bgdarkgreen, 1:Tyger.bgdarkpurple, 2:Tyger.bgdarkblue, 3:Tyger.bgdarkred, 4:Tyger.bggray, 5:Tyger.bgdarkcyan, 6:Tyger.bgdarkyellow}
@@ -1497,6 +1534,7 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
                 ammo = ammo - 1
                 board.playerbullets = board.playerbullets + 1
                 board.room[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")] = bullet
+                board.render[x-(input == "shootup")+(input == "shootdown")][y-(input == "shootleft")+(input == "shootright")] = 1
                 board.statcoords.append((x-(input == "shootup")+(input == "shootdown"), y-(input == "shootleft")+(input == "shootright")))
             else:
                 if board.shots == 0:
@@ -1530,6 +1568,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         board.roomunder[targetA][targetB] = board.room[targetA][targetB] #Put the space to be overwritten on the under layer
         board.room[targetA][targetB] = board.room[board.statcoords[0][0]][board.statcoords[0][1]] #The player occupies two tiles at once, quantum physics itc.
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         #Replace old tile with what was underneath it
         board.room[board.statcoords[0][0]][board.statcoords[0][1]] = board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]]
         board.statcoords[0] = (targetA, targetB)
@@ -1538,11 +1579,17 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         if (Tyger.options[1] != "True" and position != 0):
             print "No sticky clones!"
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         return DieItem(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[targetA][targetB].name, allboards, screen)
     elif CollisionDict[board.room[targetA][targetB].name] == "InvisWall": #Invisible wall
         if (Tyger.options[1] != "True" and position != 0):
             print "No sticky clones!"
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         return Invisible(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[targetA][targetB].name)   
     elif CollisionDict[board.room[targetA][targetB].name] == "Passage": #Passage
         return Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, health, keys, tcycles, ecycles, timepassed, targetA, targetB, flags)
@@ -1555,6 +1602,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         board.room[x][y] = board.roomunder[x][y]
         DestroyStat(board, targetA, targetB)
         UpdateStat(board, x, y, targetA, targetB)
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         input = "null"
     elif CollisionDict[board.room[targetA][targetB].name] == "Touch": #Object
         Oop.SendJump(board.room[targetA][targetB], ":touch", True)
@@ -1565,12 +1615,19 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     elif CollisionDict[board.room[targetA][targetB].name] == "Push": #Pushing
         if (Tyger.options[1] != "True" and position != 0):
             print "No sticky clones!"
+            #Render the two tiles
+            board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+            board.render[targetA][targetB] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
         if board.room[targetA][targetB].name == "bomb" and board.room[targetA][targetB].param1 == 0: #If it's a bomb, activate it.
             board.room[targetA][targetB].param1 = 9
             board.room[targetA][targetB].character = 57
             print "Bomb activated!"
+            board.render[targetA][targetB] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board #Bombs don't move when you first light them
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         return Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif CollisionDict[board.room[targetA][targetB].name] == "ChangeBoard": #Edge of boards that aren't edges
         if (Tyger.options[1] != "True" and position != 0):
@@ -1581,6 +1638,9 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         if (Tyger.options[1] != "True" and position != 0):
             print "No sticky clones!"
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        #Render the two tiles
+        board.render[board.statcoords[0][0]][board.statcoords[0][1]] = 1
+        board.render[targetA][targetB] = 1
         board.room[targetA][targetB] = Tyger.Spawn("breakable", 177, board.room[targetA][targetB].foreground, board.room[targetA][targetB].background, (targetA, targetB), 0, 0, 0, 0, 0, 0) #Become a breakable wall
         DestroyStat(board, targetA, targetB)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
@@ -1669,6 +1729,7 @@ def Push(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
             results.pop()
             while len(results) > 0:
                 board.room[x+offA][y+offB] = results[-1]
+                board.render[x+offA][y+offB] = 1 #Render the tiles
                 print "Updating stats"
                 if input == "right" or input == "down":
                     UpdateStat(board, x+(len(results)-1)*(offA > 0), y+(len(results)-1)*(offB > 0), x+offA, y+offB)
@@ -1729,12 +1790,14 @@ def Pusher(board, x, y, input, position, cycles, ammo, torches, health, flags, t
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     
     #print "Sending Push function " + pushdir
+    board.render[x][y] = 1 #Render
     Push(board, x, y, pushdir, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[x][y].xstep, board.room[x][y].ystep)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Scroll(board, x, y, cycles):
         ScrollDict = {0:Tyger.white, 1:Tyger.blue, 2:Tyger.green, 3:Tyger.cyan, 4:Tyger.red, 5:Tyger.purple, 6:Tyger.yellow}
         board.room[x][y].foreground = ScrollDict[cycles % 7]
+        board.render[x][y] = 1 #Render
 
 def Shark(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
     choices = [] #Possible ways to move
@@ -1786,11 +1849,14 @@ def Shark(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 board.room[board.statcoords[0][0]][board.statcoords[0][1]] = board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]]
                 board.statcoords[0] = (board.enterY, board.enterX)
         board.room[x][y] = board.roomunder[x][y] #Destroy the shark!
+        board.render[x][y] = 1
         board.statcoords[position] = "pop" #Destroy the shark's stat
     else:
         board.roomunder[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]]
         board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = board.room[x][y] #Move the shark
         board.room[x][y] = board.roomunder[x][y] #Remove the old shark
+        board.render[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = 1
+        board.render[x][y] = 1
         UpdateStat(board, x, y, x+WalkDict[dir][1], y+WalkDict[dir][0]) #Update its stat
     
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
@@ -1811,6 +1877,7 @@ def Slime(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 a = x-1
                 b = y
                 board.roomunder[a][b] = board.room[a][b]
+                board.render[a][b] = 1
                 #Fix colors (slimes only)
                 bg = board.room[a][b].background
                 board.room[a][b] = board.room[x][y]
@@ -1824,6 +1891,7 @@ def Slime(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 a = x+1
                 b = y
                 board.roomunder[a][b] = board.room[a][b]
+                board.render[a][b] = 1
                 #Fix colors (slimes only)
                 bg = board.room[a][b].background
                 board.room[a][b] = board.room[x][y]
@@ -1837,6 +1905,7 @@ def Slime(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 a = x
                 b = y-1
                 board.roomunder[a][b] = board.room[a][b]
+                board.render[a][b] = 1
                 #Fix colors (slimes only)
                 bg = board.room[a][b].background
                 board.room[a][b] = board.room[x][y]
@@ -1850,6 +1919,7 @@ def Slime(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 a = x
                 b = y+1
                 board.roomunder[a][b] = board.room[a][b]
+                board.render[a][b] = 1
                 #Fix colors (slimes only)
                 bg = board.room[a][b].background
                 board.room[a][b] = board.room[x][y]
@@ -1859,7 +1929,7 @@ def Slime(board, x, y, input, position, cycles, ammo, torches, health, flags, tc
                 board.statcoords.insert(position, (a,b)) #Add new stat
                 
         board.room[x][y] = Tyger.Spawn("breakable", 177, board.room[x][y].foreground, board.room[x][y].background, (x, y), 0, 0, 0, 0, 0, 0) #Become a breakable wall
-        
+        board.render[x][y]
         
     
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
@@ -1873,6 +1943,9 @@ def Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
     #Animate the color
     StarColors = {Tyger.yellow:Tyger.white, Tyger.white:Tyger.blue, Tyger.blue:Tyger.green, Tyger.green:Tyger.cyan, Tyger.cyan:Tyger.red, Tyger.red:Tyger.purple, Tyger.purple:Tyger.yellow}
     board.room[x][y].foreground = StarColors.get(board.room[x][y].foreground, Tyger.green)
+    
+    #Render it
+    board.render[x][y] = 1
     
     #Move seek if it can
     seekdir = ParseDir(["seek"], x, y, board.statcoords[0][0], board.statcoords[0][1], board.room[x][y].xstep, board.room[x][y].ystep)
@@ -1908,6 +1981,7 @@ def Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
         elif ObjectDict[board.room[x-1][y].name] == "Push" or ObjectDict[board.room[x-1][y].name] == "walkable":
             #print "I need to push!"
             Oop.Go("#go n", x, y, board, board.room[x][y], False, False, False)
+            board.render[x-1][y] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     if free[1] and seekdir == "s":
         print ObjectDict[board.room[x+1][y].name]
@@ -1924,6 +1998,7 @@ def Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
         elif ObjectDict[board.room[x+1][y].name] == "Push" or ObjectDict[board.room[x+1][y].name] == "walkable":
             #print "I need to push!"
             Oop.Go("#go s", x, y, board, board.room[x][y], False, False, False)
+            board.render[x+1][y] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
             
     if free[2] and seekdir == "e":
@@ -1941,6 +2016,7 @@ def Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
         elif ObjectDict[board.room[x][y+1].name] == "Push" or ObjectDict[board.room[x][y+1].name] == "walkable":
             #print "I need to push!"
             Oop.Go("#go e", x, y, board, board.room[x][y], False, False, False)
+            board.render[x][y+1] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     if free[3] and seekdir == "w":
         print ObjectDict[board.room[x][y-1].name]
@@ -1957,6 +2033,7 @@ def Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcy
         elif ObjectDict[board.room[x][y-1].name] == "Push" or ObjectDict[board.room[x][y-1].name] == "walkable":
             #print "I need to push!"
             Oop.Go("#go w", x, y, board, board.room[x][y], False, False, False)
+            board.render[x][y-1] = 1
             return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 

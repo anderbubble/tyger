@@ -50,7 +50,7 @@ except IOError:
     print "ERROR - File tyger.cfg not found!"
     print "Using default values instead."
     Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find the\n  ####              file:\n$                       tyger.cfg  \n  ####    Without this file you will be\n  ####    unable to access some settings.\n"
-    options.append("min")
+    options.append("Min")
     options.append("False")
     options.append("False")
     options.append("False")
@@ -66,7 +66,7 @@ print "OPTIONS: ", options
 #paldir  = "gfx/cga/"
 
 #Determine base resolution
-if hud != "min":
+if hud != "Min":
     res = (640, 350)
 else:
     res = (480, 364)
@@ -83,7 +83,7 @@ Though I can think of advantages with picking 10 frames/sec (ideal numbers vs. s
 """
 
 #Load default graphics
-if hud == "min":
+if hud == "Min":
     status = pygame.image.load("gfx/minhud.png")
 else:
     status = pygame.image.load("gfx/sidebar.png")
@@ -133,7 +133,7 @@ def main():
     
     #Check for any errors
     if Error != None:
-        Oop.TextBox(Error, "@Tyger has encountered an error...", screen)
+        Oop.TextBox(Error, "@Tyger has encountered an error...", screen, board)
     
     #Do the whole title screen thing for Tyger
     if cmdline[len(cmdline[0])-4:] == ".sav" or cmdline[0][len(cmdline[0])-4:] == ".zzt":
@@ -147,7 +147,7 @@ def main():
     #return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray
     #Double the resolution if running in 2x mode
     if options[2] == "True":
-        if hud != "min":
+        if hud != "Min":
             RESOLUTION = (640*((options[2]=="True") +1), 350*((options[2]=="True") +1))
         else:
             RESOLUTION = (480*((options[2]=="True") +1), 364*((options[2]=="True") +1))
@@ -214,7 +214,7 @@ def main():
                     print "Game saved..."
                     #exit()
                 if event.key == K_F10: #Ragequit to world selection.
-                    if hud != "min":
+                    if hud != "Min":
                         RESOLUTION = (640, 350)
                     else:
                         RESOLUTION = (480, 364)
@@ -267,6 +267,9 @@ def main():
             if event.type == MOUSEBUTTONUP and event.button == 3:
                 getinfo(pygame.mouse.get_pos(), board, screen)
         
+        #Clear the event list
+        pygame.event.clear()
+        
         #Timing
         #Death speedup:
         if health < 1 or board.room[board.statcoords[0][0]][board.statcoords[0][1]].name == "RIP":
@@ -285,6 +288,13 @@ def main():
         temp = 0
         while temp < len(board.statcoords):
             if board.statcoords[temp] == "pop":
+                temp = temp + 1
+                continue
+            elif board.statcoords[temp][0] == "slime":
+                
+                print board.statcoords[temp]
+                board.statcoords[temp] = (board.statcoords[temp][1], board.statcoords[temp][2])
+                print board.statcoords[temp]
                 temp = temp + 1
                 continue
             x,y = board.statcoords[temp] #Get the coordinates of this element
@@ -314,7 +324,7 @@ def main():
                 board = allboards[world.startboard]
             input = "null"
         
-        drawboard(screen, board)
+        drawboard(screen, board, tcycles)
         drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, (board.timelimit - timepassed))
         
         #print str(options[2]) + "---------------------------"
@@ -464,7 +474,7 @@ def read(file):
         #temp = int(binascii.hexlify(str(os.read(file, 1))), 16)
         temp = ord(os.read(file, 1))
         return temp
-    except ValueError:
+    except:
         return 0
 
 def read2(file):
@@ -562,15 +572,12 @@ class Board(object):
                 if done:
                     break
                 #The element is created in basic form
-                if thing < 47 or thing > 53: #If we're not dealing with text
+                if thing < 47 or thing > 69: #If we're not dealing with text
                     element = Element(getElementName(thing), getElementChar(thing), getFg(color), getBg(color), (1,1))
-                #print "HELLO" + str(element)
                 else: #We are dealing with text
-                    junk = str(int(thing)-46) + "0"
-                #print junk + " is color"
-                    if junk == "70": #in case of white text
-                        junk = "00"
-                    element = Element(getElementName(thing), int(color, 16), white, getBg(junk), (1,1))
+                    TextBgDict = {"bluetext":bgdarkblue, "greentext":bgdarkgreen, "cyantext":bgdarkcyan, "redtext":bgdarkred, "purpletext":bgdarkpurple, "yellowtext":bgdarkyellow, "whitetext":bgblack, "bwhitetext":bgdarkgray, "bbluetext":bgblue, "bgreentext":bggreen, "bcyantext":bgcyan, "bredtext":bgred, "bpurpletext":bgpurple, "byellowtext":bgyellow, "bgraytext":bgwhite, "graytext":bggray}
+                    element = Element(getElementName(thing), int(color, 16), white, TextBgDict[getElementName(thing)], (1,1))
+                    
                 element.coords = (row, col)
                 #print str(row) + " " + str([col]) + "= Current row/column"
                 self.room[row][col] = element
@@ -640,7 +647,10 @@ class Board(object):
                 self.playerbullets = self.playerbullets + 1
             
             #Apply colors below
-            self.roomunder[y-1][x-1] = Spawn(IdDict[self.room[y-1][x-1].underID], CharDict[self.room[y-1][x-1].underID], getFg(str(self.room[y-1][x-1].underColor)), getBg(str(self.room[y-1][x-1].underColor)), (y,x), 0, 0, 3, 0, 0, 0)
+            try:
+                self.roomunder[y-1][x-1] = Spawn(IdDict[self.room[y-1][x-1].underID], CharDict[self.room[y-1][x-1].underID], getFg(str(self.room[y-1][x-1].underColor)), getBg(str(self.room[y-1][x-1].underColor)), (y,x), 0, 0, 3, 0, 0, 0)
+            except KeyError:
+                self.roomunder[y-1][x-1] = Spawn("empty", 32, Tyger.black, Tyger.bgblack, (x, y), 0, 0, 0, 0, 0, 0)
             #self.roomunder[y-1][x-1].underColor = self.room[y-1][x-1].underColor
             #print self.roomunder[y-1][x-1].underColor, "UNDERCOLOR!"
             
@@ -843,12 +853,16 @@ def gfx2bgcolor(background):
     "BAD BG"
 
 
-def drawboard(screen, board):
+def drawboard(screen, board, tcycles):
     rendered = 0
+    
+    #In case of dark room:
+    if board.dark != 0:
+        screen.blit(darkness, (0,0))
+    
     for col in xrange(0,25):
         for row in xrange(0,60):
-            
-            
+
             #Draw a dark room
             """
             if board.dark != 0 and (board.room[col][row].name != "player" and board.room[col][row].name != "passage" and board.room[col][row].name != "ammo"):
@@ -889,8 +903,17 @@ def drawboard(screen, board):
                 if board.render[col][row] != 0:
                     board.room[col][row].image = makeimage(board.room[col][row].character, board.room[col][row].foreground, board.room[col][row].background)
             
+            
+            #Prepare for drawing light areas in darkness
+            if board.dark != 0:
+                if board.room[col][row].name == "passage" or board.room[col][row].name == "torch":
+                    board.render[col][row] = 2
+                elif board.room[col][row].name == "player" or (board.room[col][row].name == "object" and board.room[col][row].param3 != 0):
+                    board = CalcLight(board, col, row)
+                None
+            
             #Actually draw whatever needs to be drawn
-            if (board.render[col][row] != 0) or options[6] == "Full":
+            if (((board.render[col][row] != 0) or options[6] == "Full") and (board.dark == 0)) or board.render[col][row] == 2:
                 screen.blit(board.room[col][row].image, (row*8,col*14))
                 if options[6] != "Full": #This if statement will be redundant when everything is ready for partial rendering. The line below will occur always eventually.
                     board.render[col][row] = 0
@@ -935,7 +958,7 @@ def getinfo(coords, board, screen):
         
         print message
         #cline = board.room[y][x].oop[board.room[y][x].line:board.room[y][x].line+10]
-    Oop.TextBox(message, "-= Tyger Debug Info =-", screen)
+    Oop.TextBox(message, "-= Tyger Debug Info =-", screen, board)
     
     #redraw!
     #board.room[y][x].character = board.room[col][row].param1
@@ -1127,7 +1150,7 @@ def NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud):
     drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, timepassed)
     pygame.display.update()
     #Draw that board!
-    drawboard(screen, board)
+    drawboard(screen, board, tcycles)
 
     pygame.display.set_caption("Tyger - " + zztfile + " - " + world.gamename + " - " + board.title)
     #return world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed
@@ -1145,7 +1168,7 @@ def playgame(world, allboards, screen):
     board.room[board.statcoords[0][0]][board.statcoords[0][1]].cycle = 1
     #Put whatever is beneath the player on the under layer
     #board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]] = UnderOver(board.room[board.statcoords[0][0]][board.statcoords[0][1]].underID, board.room[board.statcoords[0][0]][board.statcoords[0][1]].underColor, board.room[board.statcoords[0][0]][board.statcoords[0][1]].coords)
-    drawboard(screen, board)
+    drawboard(screen, board, 0)
     pygame.display.update()
     
 def imageUnload(board):
@@ -1358,6 +1381,11 @@ def SaveBoard(save, address, allboards, board, world, overflow):
         y = elements % 60 #0-59
         
         base = (board.room[x][y].name, board.room[x][y].foregroundcolor, board.room[x][y].backgroundcolor) #This is the base element
+        #if board.room[x][y].name[-4:] == "text" #if we're dealing with text...
+        #    base = (board.room[x][y].name, board.room[x][y].foregroundcolor, board.room[x][y].backgroundcolor)
+        
+        
+        #Normal
         if (base == oldbase):
             #print "Match!", x, y
             times = times + 1 #How many times does the element occur
@@ -1549,10 +1577,11 @@ def SaveBoard(save, address, allboards, board, world, overflow):
     
     return overflow #Done.
     
-def TypedInput(message, name, screen):
+def TypedInput(message, name, screen, board):
     userinput = ""
     coord = 0
-    Oop.TextBox(message, name, screen, True)
+    
+    Oop.TextBox(message, name, screen, board, True)
     while 1:
         for event in pygame.event.get():
             if (event.type == KEYDOWN) and (event.key != K_RETURN): #Add a character
@@ -1576,4 +1605,77 @@ def TypedInput(message, name, screen):
                 print userinput
             elif event.key == K_RETURN: #Submit string
                 return userinput
+                
+def CalcLight(board, x, y):
+
+    #print "P3:", board.room[x][y].param3
+    board.render[x][y] = 2
+    lighttype = board.room[x][y].param3
+    
+    #Convert for player lighting
+    if lighttype == 0:
+        #print "Changing to 4"
+        lighttype = 4
+        
+    #Figure out how to light things
+    if lighttype == 1:
+        board.render[x][y] = 2
+    if lighttype >= 2 and lighttype <= 4:
+        #print "Light 2"
+        for num in xrange(-5,6):
+            try:
+                board.render[x][y+num] = 2
+            except:
+                continue
+        for num in xrange(-4,5):
+            try:
+                board.render[x-1][y+num] = 2
+            except:
+                continue
+        for num in xrange(-4,5):
+            try:
+                board.render[x+1][y+num] = 2
+            except:
+                continue
+        for num in xrange(-3,4):
+            try:
+                board.render[x-2][y+num] = 2
+            except:
+                continue
+        for num in xrange(-3,4):
+            try:
+                board.render[x+2][y+num] = 2
+            except:
+                continue
+    if lighttype >= 3 and lighttype <= 4:
+    
+        board.render[x][y-6] = 2
+        board.render[x][y+6] = 2
+        
+        board.render[x-1][y-5] = 2
+        board.render[x-1][y+5] = 2
+        board.render[x+1][y-5] = 2
+        board.render[x+1][y+5] = 2
+        
+        board.render[x-2][y-4] = 2
+        board.render[x-2][y-5] = 2
+        board.render[x-2][y+4] = 2
+        board.render[x-2][y+5] = 2
+        board.render[x+2][y-4] = 2
+        board.render[x+2][y-5] = 2
+        board.render[x+2][y+4] = 2
+        board.render[x+2][y+5] = 2
+        
+        for num in xrange(-4,5):
+            try:
+                board.render[x-3][y+num] = 2
+            except:
+                continue
+                
+        for num in xrange(-4,5):
+            try:
+                board.render[x+3][y+num] = 2
+            except:
+                continue
+    return board
 if __name__ == '__main__': main()
