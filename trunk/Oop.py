@@ -223,11 +223,14 @@ def Char(character):
     return character
 
 def Clear(flag, flags):
-    print "Clearing", flag
+    flag = flag.upper()
+    #print "Clearing", flag
     #print "Before... " + str(flags)
-    for x in range(0, len(flags)-1): #Find the flag if it exists
+    for x in range(0, len(flags)): #Find the flag if it exists
         if flag == flags[x]:
+            #print "Flag found!"
             flags.pop(x)
+            break
     #print "After " + str(flags)
     return flags
     
@@ -424,6 +427,7 @@ def Go(current, x, y, board, object, NoAdvance, Moved, progress):
 
 def If(current, object, x, y, board, ecycles, flags):
     result = False #I'm just going to assume you're a failure here.
+    FlagCheck = False
     opposite = False #Today is NOT opposite day.
     #Tyger.Dprint(str(Moved))
     #Break the if statement down
@@ -535,10 +539,11 @@ def If(current, object, x, y, board, ecycles, flags):
         for flag in flags:
             if flag == statement[0].upper():
                 result = True
+                FlagCheck = True #Needed for if not flag
                 statement.pop(0) #Remove the flag name
-                print "Flaggot"
+                #print "Flaggot"
                 break
-        #print "Fla"
+        #print "Flag found?", result
     
     #Remove any THEN's/
     if statement[0] == "then":
@@ -547,9 +552,17 @@ def If(current, object, x, y, board, ecycles, flags):
     
     #Flip a NOT prefix
     if opposite == True:
+        #print "Flipped due to NOT"
         result = not result
     if result == True:
-        next = Tyger.string.join(statement, " ") #Assemble the true command
+    
+        if opposite and not FlagCheck: #Special case for #if not flag
+            #print "STATEMENT!"
+            #print statement
+            next = Tyger.string.join(statement[1:], " ") #Assemble the true command
+        else:
+            next = Tyger.string.join(statement, " ") #Assemble the true command
+        print next
         #Advance the code to the after command
         NoAdvance = True
         Moved = True #Maybe?
@@ -702,10 +715,12 @@ def Restore(object, board, current):
 #        oop = oop.replace("'" + current.split(" ")[1], ":" + current.split(" ")[1])
     return object, board
 
-def Send(current, board, object, x, y):
+def Send(current, board, object, x, y, UsedSend=False):
     #print "SEND COMMAND", current
     #Send("#all:energize", board, None, -1, -1)
+    sendoffset = 0
     if current.split(" ")[0] == "#send":
+        sendoffset = 5
         #print current.split(" ")[1]
         command = current.split(" ")[1] #Reduce the command to an object and a label at most
     else:
@@ -713,8 +728,8 @@ def Send(current, board, object, x, y):
     #print str(command) + " is the #send without a #send"
     if command.find(":") == -1: #If it's just a label then it's for this object
         command = ":" + command
-        #print "Ok jumping to " + command
-        SendJump(object, command)
+        print "Ok jumping to " + command
+        SendJump(object, command, False, sendoffset)
         NoAdvance = True
     else: #Otherwise we need to find the object and the label.
         name = command[:command.find(":")]
@@ -734,19 +749,19 @@ def Send(current, board, object, x, y):
                             SendJump(board.room[position[0]][position[1]], label, True)
     return False #This lets the object that did #send continue updating its code.
     
-def SendJump(object, label, extsend=False):
+def SendJump(object, label, extsend=False, sendoffset=0):
     #print "SENDJUMP!"
     if (object.oop == None) or (object.param2 == 1) or (object.oop.lower().find("\n" + label) == -1 and extsend == True): #No oop or a lock
         #print "Oop", object.oop
         #print "P2:", object.param2
         return                                                                                                     #or external object lacks the label
-    #print "Object Jumping to label", label, extsend
-    object.line = object.oop.lower().find("\n" + label) #Find the label
-    #print "Object line now:", object.line
+    print "Object Jumping to label", label, extsend
+    object.line = object.oop.lower().find("\n" + label) - sendoffset #Find the label
+    print "Object line now:", object.line
     return
 
 def Set(flag, flags):
-    for x in range(0, len(flags)-1):
+    for x in range(0, len(flags)):
         if flag == flags[x]:
             return flags #Don't add a duplicate flag
     flags.append(flag.upper()) #Add the flag if it didn't exist before

@@ -37,6 +37,8 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
             board.msg = ""
             board.msglength = 0
             DestroyStat(board, -1, -35)
+            for temp in xrange(0,59):
+                board.render[24][temp] = 1
             #print "Stats now look like:", board.statcoords
         return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     #print Tyger.options[0]
@@ -66,6 +68,8 @@ def activate(board, x, y, input, position, cycles, ammo, torches, health, flags,
         return Star(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif board.room[x][y].name == "lion":
         return Lion(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
+    elif board.room[x][y].name == "ruffian":
+        return Ruffian(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif board.room[x][y].name == "shark":
         return Shark(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     elif board.room[x][y].name == "slime":
@@ -540,6 +544,9 @@ def ChangeBoard(board, input, allboards, x, y, screen, ammo, torches, gems, scor
     return ammo, torches, health, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board, x, y, screen):
+    #Rendering fix for breaking the window with long cheats
+    for temp in xrange(54,60):
+        board.render[14][temp] = 1
     #cheat = raw_input("?")
     cheat = Tyger.TypedInput("$Input your cheat: \n!;\n", "@Cheat!", screen, board)
     cheat = cheat.lower()
@@ -573,14 +580,22 @@ def Cheats(ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, ti
     elif cheat == "time":
         timepassed = timepassed - 30
     elif cheat == "zap":
-        board.room[x-1][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
-        board.room[x+1][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
-        board.room[x][y-1] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
-        board.room[x][y+1] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
-        DestroyStat(board, x-1, y)
-        DestroyStat(board, x+1, y)
-        DestroyStat(board, x, y-1)
-        DestroyStat(board, x, y+1)
+        if x-1 >= 0:
+            board.room[x-1][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
+            DestroyStat(board, x-1, y)
+            board.render[x-1][y] = 1
+        if x+1 <= 24:
+            board.room[x+1][y] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
+            DestroyStat(board, x+1, y)
+            board.render[x+1][y] = 1
+        if y-1 >=0:
+            board.room[x][y-1] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
+            DestroyStat(board, x, y-1)
+            board.render[x][y-1] = 1
+        if y+1 <= 59:
+            board.room[x][y+1] = Tyger.Spawn("empty", 32, Tyger.black, Tyger.bgblack, (24, y), 0, 0, 0, 0, 0, 0)
+            DestroyStat(board, x, y+1)
+            board.render[x][y+1] = 1
     elif cheat == "idspispopd" or cheat == "noclip":
         global CollisionDict
         global ClipDict
@@ -822,6 +837,99 @@ def Clockwise(board, x, y, input, position, cycles, ammo, torches, health, flags
     if blah == "x":
         exit()
     
+    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+    
+    
+def CreatureMove(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
+    choices = [] #Possible ways to move
+    canseek = False #Is it possible to move seek if the creature wants to?
+    
+    #If it matters, we'd like to know what kind of creature we're dealing with.
+    creature = board.room[x][y].name
+    #print "I'm a", creature, board.room[x][y].xstep, board.room[x][y].ystep
+    #Figure out which way is seek
+    
+    if creature != "ruffian" or (board.room[x][y].xstep == 0 and board.room[x][y].ystep == 0):
+        if ecycles != 0: #Energizers make smart creatures run away.
+            temp = "opp seek"
+        else:
+            temp = "seek"
+        seekdir = ParseDir([temp], x, y, board.statcoords[0][0], board.statcoords[0][1], board.room[x][y].xstep, board.room[x][y].ystep)
+        if x+WalkDict[seekdir][1] < 0 or x+WalkDict[seekdir][1] >= 25 or y+WalkDict[seekdir][0] < 0 or y+WalkDict[seekdir][0] >= 60:
+            None
+        else:
+            if board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "empty" or board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "fake" or board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "player":
+                canseek = True
+                #choices.append(seekdir)    
+        if y+1 < 60:
+            if board.room[x][y+1].name == "empty" or board.room[x][y+1].name == "fake" or board.room[x][y+1].name == "player":
+                choices.append("e")
+        if y-1 > 0:
+            if board.room[x][y-1].name == "empty" or board.room[x][y-1].name == "fake" or board.room[x][y-1].name == "player":
+                choices.append("w")
+        if x+1 < 25:
+            if board.room[x+1][y].name == "empty" or board.room[x+1][y].name == "fake" or board.room[x+1][y].name == "player":
+                choices.append("s")
+        if x-1 > 0:
+            if board.room[x-1][y].name == "empty" or board.room[x-1][y].name == "fake" or board.room[x-1][y].name == "player":
+                choices.append("n")
+        if len(choices) == 0:
+            choices.append("i")
+        
+        #Decide if the creature will try to move seek or randomly
+        if (canseek == False) or (rnd(1, 10) >= board.room[x][y].param1 + 1): #Move randomly
+            dir = choices[rnd(0,len(choices)-1)]
+            if dir == "i": #Give it up creature. You're surrounded.
+                return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        else: #Move seek
+            dir = seekdir
+        #If you're a ruffian, change x/y-step
+        if creature == "ruffian":
+            print "I need to change my X/Y step!"
+            board.room[x][y].xstep, board.room[x][y].ystep = WalkDict[dir]
+            print board.room[x][y].xstep, board.room[x][y].ystep
+            #board.room[x][y].ystep = 
+    else: #Ruffian related work
+        #Convert the X/Ysteps into a proper direction
+        dir = FlowDict[(board.room[x][y].xstep, board.room[x][y].ystep)]
+        
+        #Ruffians will revert to idling if they hit a border.
+        #if (x-(dir == "n") <= 0 ) or (x+(dir == "s") > 25 ) or (y-(dir == "w") <= 0 ) or (y+(dir == "e") > 60 ):
+        #    board.room[x][y].xstep = 0
+        #    board.room[x][y].ystep = 0
+        #    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+            
+        if x-(dir == "n") < 0 or x+(dir == "s") > 24 or y-(dir == "w") < 0 or y + (dir == "e") > 59:
+            print "That will crash"
+            board.room[x][y].xstep = 0
+            board.room[x][y].ystep = 0
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        if board.room[x-(dir=="n")+(dir =="s")][y-(dir=="w")+(dir=="e")].name != "empty":
+            print "Can't go there"
+            board.room[x][y].xstep = 0
+            board.room[x][y].ystep = 0
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+    
+    
+    #print "I'm going to move...", dir
+    #Now move it!
+    if board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]].name == "player": #Hurt the player
+        if ecycles == 0:
+            health = health - 10 #Way to go
+            if board.zap == 1:
+                #Move player to enterX/enterY coords
+                board.room[board.enterY][board.enterX] = board.room[board.statcoords[0][0]][board.statcoords[0][1]]
+                board.room[board.statcoords[0][0]][board.statcoords[0][1]] = board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]]
+                board.statcoords[0] = (board.enterY, board.enterX)
+        board.room[x][y] = board.roomunder[x][y] #Destroy the creature
+        board.render[x][y] = 1
+        board.statcoords[position] = "pop" #Destroy the creature's stat
+    else:
+        board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = board.room[x][y] #Move the creature
+        board.room[x][y] = board.roomunder[x][y] #Remove the old creature
+        board.render[x][y] = 1
+        board.render[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = 1
+        UpdateStat(board, x, y, x+WalkDict[dir][1], y+WalkDict[dir][0]) #Update its stat
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
     
 def DestroyStat(board, x, y):
@@ -1093,64 +1201,7 @@ def Invisible(board, x, y, input, position, cycles, ammo, torches, health, flags
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Lion(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
-    choices = [] #Possible ways to move
-    canseek = False #Is it possible to move seek if the lion wants to?
-    
-    #Figure out which way is seek
-    if ecycles != 0: #Energizers make smart lions run away.
-        temp = "opp seek"
-    else:
-        temp = "seek"
-    seekdir = ParseDir([temp], x, y, board.statcoords[0][0], board.statcoords[0][1], board.room[x][y].xstep, board.room[x][y].ystep)
-    if x+WalkDict[seekdir][1] < 0 or x+WalkDict[seekdir][1] >= 25 or y+WalkDict[seekdir][0] < 0 or y+WalkDict[seekdir][0] >= 60:
-        None
-    else:
-        if board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "empty" or board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "fake" or board.room[x+WalkDict[seekdir][1]][y+WalkDict[seekdir][0]].name == "player":
-            canseek = True
-            #choices.append(seekdir)    
-    if y+1 < 60:
-        if board.room[x][y+1].name == "empty" or board.room[x][y+1].name == "fake" or board.room[x][y+1].name == "player":
-            choices.append("e")
-    if y-1 > 0:
-        if board.room[x][y-1].name == "empty" or board.room[x][y-1].name == "fake" or board.room[x][y-1].name == "player":
-            choices.append("w")
-    if x+1 < 25:
-        if board.room[x+1][y].name == "empty" or board.room[x+1][y].name == "fake" or board.room[x+1][y].name == "player":
-            choices.append("s")
-    if x-1 > 0:
-        if board.room[x-1][y].name == "empty" or board.room[x-1][y].name == "fake" or board.room[x-1][y].name == "player":
-            choices.append("n")
-    if len(choices) == 0:
-        choices.append("i")
-    
-    #Decide if the lion will try to move seek or randomly
-    if (canseek == False) or (rnd(1, 10) >= board.room[x][y].param1 + 1): #Move randomly
-        dir = choices[rnd(0,len(choices)-1)]
-        if dir == "i": #Give it up lion. You're surrounded.
-            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
-    else: #Move seek
-        dir = seekdir
-    
-    print "I'm going to move...", dir
-    #Now move it!
-    if board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]].name == "player": #Hurt the player
-        if ecycles == 0:
-            health = health - 10 #Way to go
-            if board.zap == 1:
-                #Move player to enterX/enterY coords
-                board.room[board.enterY][board.enterX] = board.room[board.statcoords[0][0]][board.statcoords[0][1]]
-                board.room[board.statcoords[0][0]][board.statcoords[0][1]] = board.roomunder[board.statcoords[0][0]][board.statcoords[0][1]]
-                board.statcoords[0] = (board.enterY, board.enterX)
-        board.room[x][y] = board.roomunder[x][y] #Destroy the lion
-        board.render[x][y] = 1
-        board.statcoords[position] = "pop" #Destroy the lion's stat
-    else:
-        board.room[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = board.room[x][y] #Move the lion
-        board.room[x][y] = board.roomunder[x][y] #Remove the old lion
-        board.render[x][y] = 1
-        board.render[x+WalkDict[dir][1]][y+WalkDict[dir][0]] = 1
-        UpdateStat(board, x, y, x+WalkDict[dir][1], y+WalkDict[dir][0]) #Update its stat
-    
+    CreatureMove(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Monitor(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, world, allboards, screen):
@@ -1469,7 +1520,9 @@ def Passage(board, input, allboards, x, y, screen, ammo, torches, gems, score, h
 
 
 def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, allboards, screen):
-    #Reduce your energizer and change graphics accordingly
+    #Reduce your energizer/tcycles and change graphics accordingly
+    if tcycles > 0:
+        tcycles = tcycles - 1
     if ecycles != 0:
         ecycles = ecycles - 1
         
@@ -1492,11 +1545,52 @@ def Player(board, x, y, input, position, cycles, ammo, torches, health, flags, t
             board.room[x][y].background = Tyger.bgdarkblue
     
     #Pausing
-    if input == "p":
-        print "PAUSED"
-        pygame.event.clear()
-        event = pygame.event.wait()
-        print str(event) + " 000"
+    #if input == "p":
+    #    print "PAUSED"
+    #    pygame.event.clear()
+    #    event = pygame.event.wait()
+    #    print str(event) + " 000"
+    
+    #Torch usage
+    if board.dark != 0 and torches > 0 and tcycles == 0 and input == "Torch":
+        torches = torches - 1
+        tcycles = 196
+    #Special Inventory Button
+    if input == "Inventory":
+        print "Iventory"
+        if "I" in flags:
+            "Flag found"
+            Oop.Clear("I", flags)
+            input = "null"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        else:
+            print "Flag I isn't set"
+            flags = Oop.Set("I", flags)
+            input = "null"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+    #Special Reload Button
+    if input == "Reload":
+        print "Reloading"
+        if "R" in flags:
+            "Flag found"
+            Oop.Clear("R", flags)
+            input = "null"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        else:
+            print "Flag R isn't set"
+            flags = Oop.Set("R", flags)
+            input = "null"
+            return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+   
+    #Oop based input
+    if input[0] == "#" or input[0] == "/" or input[0] == "?":
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].oop = input
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].oopLength = len(input)
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].line = 0
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].xstep = 0
+        board.room[board.statcoords[0][0]][board.statcoords[0][1]].ystep = 0
+        ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board = Object(board, board.statcoords[0][0], board.statcoords[0][1], "null", 0, 0, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, screen)
+        return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
    
     #Cheating
     if input == "cheat":
@@ -1792,6 +1886,38 @@ def Pusher(board, x, y, input, position, cycles, ammo, torches, health, flags, t
     #print "Sending Push function " + pushdir
     board.render[x][y] = 1 #Render
     Push(board, x, y, pushdir, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board.room[x][y].xstep, board.room[x][y].ystep)
+    return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+
+def Ruffian(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed):
+    #Ruffians have two modes: Still and Mobile. Which of these modes the Ruffian is in is dictated by how the Step parameters are set.
+    #If X/Y is set to zero, the Ruffian is resting and does not move. Otherwise, the Ruffian moves like Flow, whichever direction the Step happens to be pointing.
+    #Resting time is the likelihood that a Ruffian will switch between these two modes, ranging from Value 0 (90% chance) to 8 (10% chance).
+    #When switching from Still to Mobile, it uses Intelligence to determine whether it will move randomly or towards the player.
+    #The direction chosen by the Ruffian does not change until it stops moving (by switching back to Still mode, setting Step to [0,0])
+    #- Saxxon
+    
+    #Simplify things a bit
+    ruffian = board.room[x][y]
+    resting = False
+    if ruffian.xstep == 0 and ruffian.ystep == 0:
+        resting = True
+
+    
+    
+    #Should we change modes?
+    if (rnd(1, 10) > ruffian.param1 + 1): #If we roll a high number, switch modes
+        resting = not resting #I am rather fond of this line.
+    
+    #Now process what to do
+    if resting:
+        #We're resting. End of story.
+        ruffian.xstep = 0
+        ruffian.ystep = 0
+    else:
+        CreatureMove(board, x, y, input, position, cycles, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed)
+        return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
+        
+    
     return ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, input, board
 
 def Scroll(board, x, y, cycles):
