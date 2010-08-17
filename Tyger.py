@@ -11,6 +11,7 @@ import math
 import string
 import binascii
 import random
+from CCS import *
 from pygame.locals import *
 from sys import exit
 from sys import argv
@@ -125,6 +126,9 @@ def main():
     pygame.display.set_icon(icon)
     screen = pygame.display.set_mode(RESOLUTION) #NOFRAME alt param
     
+    #Load CCS for easier controls
+    controls, scancodes = CCSInit()
+    
     #Force an error for debugging...
     #Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find the\n  ####              file:\n$                       tyger.cfg  \n  ####    Without this file you will be\n  ####    unable to access some settings.\n"
     #Error = "  ####    W    A    R    N    I    N    G\n########\n########            Tyger is currently\n########            unable to find any\n  ####              valid ZZT files!\n\n  ####    Because of this you may only\n  ####    load saves at this time.\n"
@@ -160,13 +164,13 @@ def main():
     seconds = 0
     cycles = 0
     input = "null" 
+    lastdir = "right" #This is arbitrary
+    mode = "Stop"
 
     #Set up quicksave name
     savename = world.gamename
     
-    #Screenshots and Screenrecords
-    games = glob.glob("screenshots\\" + world.gamename + "*.png")
-    scrnum = len(games)  #Screenshot number
+    #Debug recording feature
     capture = len(glob.glob("record\\" + world.gamename + "*.png"))
     record = False
     
@@ -175,16 +179,100 @@ def main():
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == MOUSEBUTTONUP and event.button == 1):
                 exit()
-            if event.type == KEYDOWN:
-                if event.key == K_F4:                               #Fullscreen toggle
-                    FSCREEN = not FSCREEN
-                    if FSCREEN:
-                        pygame.mouse.set_visible(False)
-                        screen = pygame.display.set_mode(RESOLUTION, FULLSCREEN)
-                    else:
-                        pygame.mouse.set_visible(True)
-                        screen = pygame.display.set_mode(RESOLUTION)
-                    drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, timepassed)
+            if event.type == MOUSEBUTTONUP and event.button == 3:
+                getinfo(pygame.mouse.get_pos(), board, screen)
+            input = GetInput(controls, scancodes)
+        if input != None and input != "null":
+            print input, "IS YOUR INPUT"
+        input, lastdir = ParseInput(input, lastdir)
+        
+        
+        #Special input commands
+        if input == "ScreenToggle":
+            FSCREEN = not FSCREEN
+            if FSCREEN:
+                pygame.mouse.set_visible(False)
+                screen = pygame.display.set_mode(RESOLUTION, FULLSCREEN)
+            else:
+                pygame.mouse.set_visible(True)
+                screen = pygame.display.set_mode(RESOLUTION)
+                
+            for x in xrange(0,25): #Rerender board
+                for y in xrange(0,60):
+                    board.render[x][y] = 1
+            drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, timepassed)
+            input = "null"
+        
+        if input == "Save":
+            savename = TypedInput("$Saved Game Name: \n!;\n", "@Saving...", screen, board)
+            savename = savename.lower()
+            SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
+            input = "null"
+            
+        if input == "Screenshot": #this needs revamping
+            try:
+                temp = glob.glob("screenshots\\" + world.gamename + "*.png")[-1][12+len(world.gamename)+1:]
+                scrnum = int(temp[:temp.find(".png")])+1
+            except IndexError:
+                scrnum = 0
+            #print "Temp is", temp
+            #print temp.find(".png"), "is where .png is"
+            
+            screenshot = "screenshots/" + world.gamename + "-" + str(scrnum) + ".png"
+            pygame.image.save(screen, screenshot)
+            scrnum = scrnum + 1
+            Dprint("\nSaved screenshot as " + screenshot)
+            input = "null"
+            
+        if input == "SaveQuit":
+            SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
+            print "Game saved..."
+            exit()
+            
+        if input == "QuitGame": #Ragequit to world selection.
+            if hud != "Min":
+                RESOLUTION = (640, 350)
+            else:
+                RESOLUTION = (480, 364)
+            mode = "Stop"
+            screen = pygame.display.set_mode(RESOLUTION)
+            zztfile = titlescreen(screen, RESOLUTION)
+            world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+            #world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
+            if options[2] == "True":
+                if hud != "min":
+                    RESOLUTION = (640*((options[2]=="True") +1), 350*((options[2]=="True") +1))
+                else:
+                    RESOLUTION = (480*((options[2]=="True") +1), 364*((options[2]=="True") +1))
+            screen = pygame.display.set_mode(RESOLUTION)
+            pygame.display.set_caption("Tyger")
+            seconds, cycles = 0, 0
+            input = "null" 
+            continue
+            
+        if input == "NextBoard":
+            input = "null"
+            currentboard = currentboard + 1
+            if currentboard > world.boards:
+                currentboard = 0
+            imageUnload(board)
+            board = allboards[currentboard]
+            for x in xrange(0,25): #Rerender board
+                for y in xrange(0,60):
+                    board.render[x][y] = 1
+            print str(board)
+        if input == "PrevBoard":
+            input = "null"
+            currentboard = currentboard - 1
+            if currentboard < 0:
+                currentboard = world.boards
+            imageUnload(board)
+            board = allboards[currentboard]
+            for x in xrange(0,25): #Rerender board
+                for y in xrange(0,60):
+                    board.render[x][y] = 1
+            print str(board)
+        """
                         
                 if event.key == K_KP_PLUS or event.key == K_EQUALS: #Board cycle for debugging
                     currentboard = currentboard + 1
@@ -194,78 +282,17 @@ def main():
                     board = allboards[currentboard]
                     print str(board)
                 if event.key == K_KP_MINUS or event.key == K_MINUS: #Board cycle for debugging
-                    currentboard = currentboard - 1
-                    if currentboard < 0:
-                        currentboard = world.boards
-                    imageUnload(board)
-                    board = allboards[currentboard]
-                    print str(board)
-                if event.key == K_F3: #Save and continue
-                    savename = Tyger.TypedInput("$Saved Game Name: \n!;\n", "@Saving...", screen)
-                    savename = savename.lower()
-                    SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
-                if event.key == K_F5: #Take screenshot
-                    screenshot = "screenshots/" + world.gamename + "-" + str(scrnum) + ".png"
-                    pygame.image.save(screen, screenshot)
-                    scrnum = scrnum + 1
-                    Dprint("\nSaved screenshot as " + screenshot)
-                if event.key == K_F11: #Save and quit.
-                    SaveGame(savename, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, board, world)
-                    print "Game saved..."
-                    #exit()
-                if event.key == K_F10: #Ragequit to world selection.
-                    if hud != "Min":
-                        RESOLUTION = (640, 350)
-                    else:
-                        RESOLUTION = (480, 364)
-                    screen = pygame.display.set_mode(RESOLUTION)
-                    zztfile = titlescreen(screen, RESOLUTION)
-                    world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed, blue, green, cyan, red, purple, yellow, white, black, gray, darkblue, darkgreen, darkcyan, darkred, darkpurple, darkyellow, darkgray, bgblue, bggreen, bgcyan, bgred, bgpurple, bgyellow, bgwhite, bgblack, bggray, bgdarkblue, bgdarkgreen, bgdarkcyan, bgdarkred, bgdarkpurple, bgdarkyellow, bgdarkgray = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
-                    #world, board, currentboard, allboards, ammo, torches, health, flags, tcycles, ecycles, gems, score, keys, timepassed = NewGame(zztfile, screen, RESOLUTION, FSCREEN, hud)
-                    if options[2] == "True":
-                        if hud != "min":
-                            RESOLUTION = (640*((options[2]=="True") +1), 350*((options[2]=="True") +1))
-                        else:
-                            RESOLUTION = (480*((options[2]=="True") +1), 364*((options[2]=="True") +1))
-                    screen = pygame.display.set_mode(RESOLUTION)
-                    pygame.display.set_caption("Tyger")
-                    seconds, cycles = 0, 0
-                    input = "null" 
-                    continue
-                #27 3N 4S 5E 6W
+
                 
-                #Read keys
-                if event.key == K_RIGHT or pygame.key.get_pressed()[275]:
-                    input = "right"
-                    if pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]:
-                        input = "shootright"
-                elif event.key == K_LEFT or pygame.key.get_pressed()[276]:
-                    input = "left"
-                    if pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]:
-                        input = "shootleft"
-                elif event.key == K_UP or pygame.key.get_pressed()[273]:
-                    input = "up"
-                    if pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]:
-                        input = "shootup"
-                elif event.key == K_DOWN or pygame.key.get_pressed()[274]:
-                    input = "down"
-                    if pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]:
-                        input = "shootdown"
-                elif event.key == K_p:
-                    input = "p"
-                elif event.key == K_SLASH and (pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]):
-                    input = "cheat"
-                else:
-                    input = "null"
-                    
+                
             #Element click mode
             
             if event.type == KEYUP:
                 if event.key == K_RIGHT or event.key == K_LEFT or event.key == K_UP or event.key == K_DOWN:
                     input = "null"
             
-            if event.type == MOUSEBUTTONUP and event.button == 3:
-                getinfo(pygame.mouse.get_pos(), board, screen)
+            
+        """
         
         #Clear the event list
         pygame.event.clear()
@@ -318,11 +345,12 @@ def main():
                 health = health - 10
                 timepassed = 0
         
-        if input == "playgame" or input == "p":
-            if input == "playgame":
-                imageUnload(board)
-                board = allboards[world.startboard]
+        if input == "Pause" and mode == "Stop": #We need to PLAY the game now
+            imageUnload(board)
+            board = allboards[world.startboard]
             input = "null"
+            mode = "Play"
+
         
         drawboard(screen, board, tcycles)
         drawhud(screen, RESOLUTION, FSCREEN, hud, health, ammo, torches, tcycles, ecycles, gems, score, keys, (board.timelimit - timepassed))
@@ -1678,4 +1706,21 @@ def CalcLight(board, x, y):
             except:
                 continue
     return board
+    
+def ParseInput(input, lastdir):
+    if input == "CheatCheck":
+        if (pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]): #You're cheating. I won't judge.
+            return "cheat", lastdir
+        else: #You just hit slash for some reason
+            return "null", lastdir
+    if (input == "up" or input == "down" or input == "left" or input == "right"): #Are you shooting?
+        if (pygame.key.get_pressed()[303] or pygame.key.get_pressed()[304]): #You're shooting
+            return "shoot" + input, lastdir
+        else: #Just moving
+            return input, input
+    if input == "shootflow": #Shoot in direction you last moved
+        return "shoot" + lastdir, lastdir
+        
+    return input, lastdir
+    
 if __name__ == '__main__': main()
